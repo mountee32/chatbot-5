@@ -8,4 +8,4 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 -----
-when i click a suggested answer button, what animations options are availale, e.g. the buttons fly off to the left or the buttons fade, first the buttons not selected and then the button selected fades last for emphaisie 
+can we add a menu when the program first run, can the menu be dynamically built from a json config file with menu and submenu, suggest suitable options for a christian childrens educational website and chat bot, for each option change the chatbot system prompt approriately for the selection

@@ -10,6 +10,13 @@ API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "openai/gpt-4"
 
 conversation_history = []
+current_prompt = ""
+
+def load_menu_config():
+    with open('menu_config.json', 'r') as f:
+        return json.load(f)
+
+menu_config = load_menu_config()
 
 def generate_response(messages):
     headers = {
@@ -19,10 +26,9 @@ def generate_response(messages):
         "Content-Type": "application/json"
     }
 
-    # Add instruction for Markdown and emoticons
     system_message = {
         "role": "system",
-        "content": "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
+        "content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
     }
 
     messages = [system_message] + messages
@@ -58,7 +64,7 @@ def generate_suggestions(messages):
         "Content-Type": "application/json"
     }
 
-    prompt = messages + [{"role": "system", "content": "Generate 4 short, diverse suggestions for the user's next message. Each suggestion should be a complete sentence and should be relevant to the conversation history. You can use Markdown syntax and emoticons."}]
+    prompt = messages + [{"role": "system", "content": "Generate 4 short, diverse suggestions for the user's next message.  You can use Markdown syntax and emoticons."}]
 
     data = {
         "model": MODEL,
@@ -72,7 +78,7 @@ def generate_suggestions(messages):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('index.html', menu_config=menu_config)
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -89,6 +95,12 @@ def chat():
 def get_suggestions():
     suggestions = generate_suggestions(conversation_history)
     return jsonify(suggestions)
+
+@app.route('/set_prompt', methods=['POST'])
+def set_prompt():
+    global current_prompt
+    current_prompt = request.json['prompt']
+    return jsonify({"status": "success"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
