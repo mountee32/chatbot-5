@@ -10,7 +10,7 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 -----
-can we ensure when going from a chat, back to the menu, selecting a new chat, that the new chat is fresh and does not continue where the last chat finished 
+in the world view section how can I add WLC v Dawkins sub option that allows for both william lane craig and dawkins to answer each question from their perspectives
 
 
 ## templates/index.html
@@ -59,374 +59,221 @@ can we ensure when going from a chat, back to the menu, selecting a new chat, th
         </div>
     </div>
 
-                                      <script>
-                                          const md = window.markdownit();
-                                          const menuContainer = document.getElementById('menu-container');
-                                          const menuItems = document.getElementById('menu-items');
-                                          const menuTitle = document.getElementById('menu-title');
-                                          const menuBackButton = document.getElementById('menu-back-button');
-                                          const chatContainer = document.getElementById('chat-container');
-                                          const messagesContainer = document.getElementById('messages-container');
-                                          const suggestionsContainer = document.getElementById('suggestions-container');
-                                          const userInput = document.getElementById('user-input');
-                                          const sendButton = document.getElementById('send-button');
-                                          const chatBackButton = document.getElementById('chat-back-button');
+    <script>
+        const md = window.markdownit();
+        const menuContainer = document.getElementById('menu-container');
+        const menuItems = document.getElementById('menu-items');
+        const menuTitle = document.getElementById('menu-title');
+        const menuBackButton = document.getElementById('menu-back-button');
+        const chatContainer = document.getElementById('chat-container');
+        const messagesContainer = document.getElementById('messages-container');
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const chatBackButton = document.getElementById('chat-back-button');
 
-                                          const emoticons = {
-                                              ':)': '😊', ':(': '😢', ':D': '😃', ';)': '😉', ':P': '😛',
-                                              ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
-                                          };
+        const emoticons = {
+            ':)': '😊', ':(': '😢', ':D': '😃', ';)': '😉', ':P': '😛',
+            ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
+        };
 
-                                          let currentMenu = 'main';
-                                          let menuConfig;
-                                          let currentSubmenu;
+        let currentMenu = 'main';
+        let menuConfig;
+        let currentSubmenu;
 
-                                          function replaceEmoticons(text) {
-                                              return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
-                                          }
+        function replaceEmoticons(text) {
+            return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
+        }
 
-                                          function renderContent(content) {
-                                              const emoticonReplaced = replaceEmoticons(content);
-                                              return md.render(emoticonReplaced);
-                                          }
+        function renderContent(content) {
+            const emoticonReplaced = replaceEmoticons(content);
+            return md.render(emoticonReplaced);
+        }
 
-                                          function addMessage(role, content) {
-                                              const messageDiv = document.createElement('div');
-                                              messageDiv.className = `message ${role}-message`;
-                                              const contentDiv = document.createElement('div');
-                                              contentDiv.className = 'message-content';
-                                              contentDiv.innerHTML = renderContent(content);
-                                              messageDiv.appendChild(contentDiv);
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = renderContent(content);
+            messageDiv.appendChild(contentDiv);
 
-                                              const timestamp = document.createElement('div');
-                                              timestamp.className = 'timestamp';
-                                              timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                              messageDiv.appendChild(timestamp);
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageDiv.appendChild(timestamp);
 
-                                              messagesContainer.appendChild(messageDiv);
-                                              messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                                              return contentDiv;
-                                          }
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return contentDiv;
+        }
 
-                                          function createSuggestionButton(suggestion) {
-                                              const button = document.createElement('button');
-                                              button.textContent = suggestion;
-                                              button.className = 'suggestion-button';
-                                              button.addEventListener('click', () => {
-                                                  userInput.value = suggestion;
-                                                  sendMessage();
-                                                  removeSuggestions();
-                                              });
-                                              return button;
-                                          }
+        function createSuggestionButton(suggestion) {
+            const button = document.createElement('button');
+            button.textContent = suggestion;
+            button.className = 'suggestion-button';
+            button.addEventListener('click', () => {
+                userInput.value = suggestion;
+                sendMessage();
+                removeSuggestions();
+            });
+            return button;
+        }
 
-                                          function removeSuggestions() {
-                                              suggestionsContainer.innerHTML = '';
-                                          }
+        function removeSuggestions() {
+            suggestionsContainer.innerHTML = '';
+        }
 
-                                          function updateSuggestions() {
-                                              fetch('/suggestions')
-                                                  .then(response => response.json())
-                                                  .then(suggestions => {
-                                                      removeSuggestions();
-                                                      suggestions.forEach(suggestion => {
-                                                          suggestionsContainer.appendChild(createSuggestionButton(suggestion));
-                                                      });
-                                                  });
-                                          }
+        function updateSuggestions() {
+            fetch('/suggestions')
+                .then(response => response.json())
+                .then(suggestions => {
+                    removeSuggestions();
+                    suggestions.forEach(suggestion => {
+                        suggestionsContainer.appendChild(createSuggestionButton(suggestion));
+                    });
+                });
+        }
 
-                                          function sendMessage() {
-                                              const message = userInput.value.trim();
-                                              if (message) {
-                                                  addMessage('user', message);
-                                                  userInput.value = '';
-                                                  removeSuggestions();
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage('user', message);
+                userInput.value = '';
+                removeSuggestions();
 
-                                                  fetch('/chat', {
-                                                      method: 'POST',
-                                                      headers: {
-                                                          'Content-Type': 'application/json',
-                                                      },
-                                                      body: JSON.stringify({ message: message }),
-                                                  })
-                                                  .then(response => {
-                                                      const reader = response.body.getReader();
-                                                      const decoder = new TextDecoder();
-                                                      let assistantMessage = '';
-                                                      let messageElement = null;
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                })
+                .then(response => {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let assistantMessage = '';
+                    let messageElement = null;
 
-                                                      function readStream() {
-                                                          reader.read().then(({ done, value }) => {
-                                                              if (done) {
-                                                                  updateSuggestions();
-                                                                  return;
-                                                              }
-                                                              const chunk = decoder.decode(value);
-                                                              assistantMessage += chunk;
-                                                              if (!messageElement) {
-                                                                  messageElement = addMessage('assistant', '');
-                                                              }
-                                                              messageElement.innerHTML = renderContent(assistantMessage);
-                                                              messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                                                              readStream();
-                                                          });
-                                                      }
+                    function readStream() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                updateSuggestions();
+                                return;
+                            }
+                            const chunk = decoder.decode(value);
+                            assistantMessage += chunk;
+                            if (!messageElement) {
+                                messageElement = addMessage('assistant', '');
+                            }
+                            messageElement.innerHTML = renderContent(assistantMessage);
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            readStream();
+                        });
+                    }
 
-                                                      readStream();
-                                                  });
-                                              }
-                                          }
+                    readStream();
+                });
+            }
+        }
 
-                                          function showMainMenu() {
-                                              menuContainer.style.display = 'flex';
-                                              chatContainer.style.display = 'none';
-                                              currentMenu = 'main';
-                                              menuBackButton.style.display = 'none';
-                                              menuTitle.textContent = 'Main Menu';
-                                              createMenu(menuConfig);
-                                          }
+        function showMainMenu() {
+            menuContainer.style.display = 'flex';
+            chatContainer.style.display = 'none';
+            currentMenu = 'main';
+            menuBackButton.style.display = 'none';
+            menuTitle.textContent = 'Main Menu';
+            createMenu(menuConfig);
+        }
 
-                                          function showSubMenu(submenu, title) {
-                                              menuContainer.style.display = 'flex';
-                                              chatContainer.style.display = 'none';
-                                              currentMenu = 'sub';
-                                              menuBackButton.style.display = 'block';
-                                              menuTitle.textContent = title;
-                                              createSubmenu(submenu);
-                                          }
+        function showSubMenu(submenu, title) {
+            menuContainer.style.display = 'flex';
+            chatContainer.style.display = 'none';
+            currentMenu = 'sub';
+            menuBackButton.style.display = 'block';
+            menuTitle.textContent = title;
+            createSubmenu(submenu);
+        }
 
-                                          function showChat() {
-                                              menuContainer.style.display = 'none';
-                                              chatContainer.style.display = 'flex';
-                                              currentMenu = 'chat';
-                                          }
+        function showChat() {
+            menuContainer.style.display = 'none';
+            chatContainer.style.display = 'flex';
+            currentMenu = 'chat';
+        }
 
-                                          function createMenu(menuConfig) {
-                                              menuItems.innerHTML = '';
-                                              menuConfig.menu.forEach(item => {
-                                                  const menuItem = document.createElement('div');
-                                                  menuItem.className = 'menu-item';
-                                                  menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
-                                                  menuItems.appendChild(menuItem);
+        function createMenu(menuConfig) {
+            menuItems.innerHTML = '';
+            menuConfig.menu.forEach(item => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
+                menuItems.appendChild(menuItem);
 
-                                                  menuItem.addEventListener('click', () => {
-                                                      currentSubmenu = item.submenu;
-                                                      showSubMenu(item.submenu, item.name);
-                                                  });
-                                              });
-                                          }
+                menuItem.addEventListener('click', () => {
+                    currentSubmenu = item.submenu;
+                    showSubMenu(item.submenu, item.name);
+                });
+            });
+        }
 
-                                          function createSubmenu(submenu) {
-                                              menuItems.innerHTML = '';
-                                              submenu.forEach(subItem => {
-                                                  const submenuItem = document.createElement('div');
-                                                  submenuItem.className = 'submenu-item';
-                                                  submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
-                                                  submenuItem.addEventListener('click', () => {
-                                                      fetch('/set_prompt', {
-                                                          method: 'POST',
-                                                          headers: {
-                                                              'Content-Type': 'application/json',
-                                                          },
-                                                          body: JSON.stringify({ prompt: subItem.prompt }),
-                                                      })
-                                                      .then(() => {
-                                                          showChat();
-                                                          addMessage('assistant', `Welcome to ${subItem.name}! How can I help you?`);
-                                                      });
-                                                  });
-                                                  menuItems.appendChild(submenuItem);
-                                              });
-                                          }
+        function createSubmenu(submenu) {
+            menuItems.innerHTML = '';
+            submenu.forEach(subItem => {
+                const submenuItem = document.createElement('div');
+                submenuItem.className = 'submenu-item';
+                submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
+                submenuItem.addEventListener('click', () => {
+                    fetch('/set_prompt', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ prompt: subItem.prompt }),
+                    })
+                    .then(() => {
+                        showChat();
+                        resetChat();
+                        addMessage('assistant', `Welcome to ${subItem.name}! How can I help you?`);
+                    });
+                });
+                menuItems.appendChild(submenuItem);
+            });
+        }
 
-                                          function initializeMenu(config) {
-                                              menuConfig = config;
-                                              showMainMenu();
-                                          }
+        function resetChat() {
+            messagesContainer.innerHTML = '';
+            removeSuggestions();
+        }
 
-                                          sendButton.addEventListener('click', sendMessage);
-                                          userInput.addEventListener('keypress', (e) => {
-                                              if (e.key === 'Enter') {
-                                                  sendMessage();
-                                              }
-                                          });
+        function initializeMenu(config) {
+            menuConfig = config;
+            showMainMenu();
+        }
 
-                                          menuBackButton.addEventListener('click', () => {
-                                              if (currentMenu === 'sub') {
-                                                  showMainMenu();
-                                              }
-                                          });
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
 
-                                          chatBackButton.addEventListener('click', () => {
-                                              if (currentMenu === 'chat') {
-                                                  showSubMenu(currentSubmenu, menuTitle.textContent);
-                                              }
-                                          });
+        menuBackButton.addEventListener('click', () => {
+            if (currentMenu === 'sub') {
+                showMainMenu();
+            }
+        });
 
-                                          // Initialize the menu
-                                          initializeMenu({{ menu_config | tojson | safe }});
-                                      </script>
-## main.py
+        chatBackButton.addEventListener('click', () => {
+            if (currentMenu === 'chat') {
+                showSubMenu(currentSubmenu, menuTitle.textContent);
+            }
+        });
 
-import os
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context
-import requests
-import json
-import time
-import re
-
-app = Flask(__name__)
-
-OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4"
-LOG_FILE = 'chat_log.json'
-
-conversation_history = []
-current_prompt = ""
-
-def load_menu_config():
-    with open('menu_config.json', 'r') as f:
-        return json.load(f)
-
-menu_config = load_menu_config()
-
-def log_event(event_type, data):
-    log_entry = {
-        'timestamp': time.time(),
-        'event_type': event_type,
-        'data': data
-    }
-
-    try:
-        with open(LOG_FILE, 'r+') as f:
-            try:
-                log_data = json.load(f)
-            except json.JSONDecodeError:
-                log_data = []
-
-            log_data.append(log_entry)
-
-            f.seek(0)
-            json.dump(log_data, f, indent=2)
-            f.truncate()
-    except FileNotFoundError:
-        with open(LOG_FILE, 'w') as f:
-            json.dump([log_entry], f, indent=2)
-
-def generate_response(messages):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://your-app-url.com",
-        "X-Title": "OpenRouter Chatbot",
-        "Content-Type": "application/json"
-    }
-
-    system_message = {
-        "role": "system",
-        "content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
-    }
-
-    messages = [system_message] + messages
-
-    data = {
-        "model": MODEL,
-        "messages": messages,
-        "stream": True
-    }
-
-    response = requests.post(API_URL, headers=headers, json=data, stream=True)
-
-    for line in response.iter_lines():
-        if line:
-            line = line.decode('utf-8')
-            if line.startswith('data: '):
-                line = line[6:]
-                if line.strip() == '[DONE]':
-                    break
-                try:
-                    json_object = json.loads(line)
-                    content = json_object['choices'][0]['delta'].get('content', '')
-                    if content:
-                        yield content
-                except json.JSONDecodeError:
-                    continue
-
-def generate_suggestions(messages):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://your-app-url.com",
-        "X-Title": "OpenRouter Chatbot",
-        "Content-Type": "application/json"
-    }
-
-    system_message = {
-        "role": "system",
-        "content": f"You are a suggested follow on prompt generator for a christian chatbot, therefore generate 4 very short maximum 10 words, diverse, and relevant suggestions for the user's next desired message based on the current context and conversation history. The suggestions should be appropriate for children and related to the current topic. You can use Markdown syntax and emoticons."
-    }
-
-    prompt = [system_message] + messages
-
-    data = {
-        "model": MODEL,
-        "messages": prompt,
-        "max_tokens": 150
-    }
-
-    response = requests.post(API_URL, headers=headers, json=data)
-    suggestions = response.json()['choices'][0]['message']['content'].split('\n')
-
-    # Remove numbering and any leading/trailing whitespace
-    cleaned_suggestions = [re.sub(r'^\d+\.\s*', '', s.strip()) for s in suggestions if s.strip()]
-
-    return cleaned_suggestions[:4]
-
-@app.route('/')
-def home():
-    return render_template('index.html', menu_config=menu_config)
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_message = request.json['message']
-    conversation_history.append({"role": "user", "content": user_message})
-
-    log_event('user_message', {
-        'message': user_message,
-        'prompt': current_prompt
-    })
-
-    def generate():
-        assistant_message = ""
-        for content in generate_response(conversation_history):
-            assistant_message += content
-            yield content
-
-        log_event('assistant_message', {
-            'message': assistant_message,
-            'prompt': current_prompt
-        })
-
-    return Response(stream_with_context(generate()), content_type='text/plain')
-
-@app.route('/suggestions', methods=['GET'])
-def get_suggestions():
-    suggestions = generate_suggestions(conversation_history)
-    log_event('suggestions_generated', {
-        'suggestions': suggestions
-    })
-    return jsonify(suggestions)
-
-@app.route('/set_prompt', methods=['POST'])
-def set_prompt():
-    global current_prompt
-    current_prompt = request.json['prompt']
-    log_event('prompt_set', {
-        'prompt': current_prompt
-    })
-    return jsonify({"status": "success"})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+        // Initialize the menu
+        initializeMenu({{ menu_config | tojson | safe }});
+    </script>
+</body>
+</html>
 ## chat_log.json
 
 [
@@ -525,6 +372,125 @@ if __name__ == '__main__':
         "\"What are other basic math equations?\"",
         "\"What is 3+3?\" \ud83e\udd14",
         "\"How can I practice math with fun?\" \ud83c\udfb2"
+      ]
+    }
+  },
+  {
+    "timestamp": 1719001356.106044,
+    "event_type": "prompt_set",
+    "data": {
+      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
+    }
+  },
+  {
+    "timestamp": 1719001358.908733,
+    "event_type": "user_message",
+    "data": {
+      "message": "2+2",
+      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
+    }
+  },
+  {
+    "timestamp": 1719001366.8604286,
+    "event_type": "assistant_message",
+    "data": {
+      "message": "Great! We're talking about one of the basic operations of mathematics, which is addition.\n\nSo, when you see \"2+2\", it's like saying you have two apples, and you found two more apples. So, let's count them all together. You start with your first two apples, then add one more (that's a total of three apples) and then add another one. Now, you should have four apples!\n\nSo, 2 (the first two apples) plus 2 (the apples you found) equals 4 apples in total. So 2+2=4! That's how addition works.\n\nLet's practice: if you had 2 cookies and I gave you 2 more cookies, how many cookies would you have in total?\n",
+      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
+    }
+  },
+  {
+    "timestamp": 1719001369.2720995,
+    "event_type": "suggestions_generated",
+    "data": {
+      "suggestions": [
+        "\"Tell me about Creation!\"",
+        "\"Who was Moses?\"",
+        "\"What is Good Friday?\"",
+        "\"How do we pray?\""
+      ]
+    }
+  },
+  {
+    "timestamp": 1719001369.2737045,
+    "event_type": "prompt_set",
+    "data": {
+      "prompt": "You are a wise Christian mentor and friend for children. Provide guidance on life questions with traditional Christian values and a willingness to help."
+    }
+  },
+  {
+    "timestamp": 1719002380.8927112,
+    "event_type": "prompt_set",
+    "data": {
+      "prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where they explore a mysterious ancient city. The city is filled with puzzles and challenges that can only be solved through acts of kindness. Start by describing the entrance to the city and present the player with their first choice or challenge."
+    }
+  },
+  {
+    "timestamp": 1719002388.959887,
+    "event_type": "prompt_set",
+    "data": {
+      "prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where they explore a mysterious ancient city. The city is filled with puzzles and challenges that can only be solved through acts of kindness. Start by describing the entrance to the city and present the player with their first choice or challenge."
+    }
+  },
+  {
+    "timestamp": 1719011690.402052,
+    "event_type": "prompt_set",
+    "data": {
+      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
+    }
+  },
+  {
+    "timestamp": 1719011693.654308,
+    "event_type": "user_message",
+    "data": {
+      "message": "HI",
+      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
+    }
+  },
+  {
+    "timestamp": 1719011695.746231,
+    "event_type": "assistant_message",
+    "data": {
+      "message": "Hello there! How can I help you today? Is there a particular topic related to atheism or Christianity that you'd like to discuss?",
+      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
+    }
+  },
+  {
+    "timestamp": 1719011698.5496476,
+    "event_type": "suggestions_generated",
+    "data": {
+      "suggestions": [
+        "Here are 4 short, child-friendly suggestions for the next message:",
+        "\"Tell me about Jesus \ud83d\ude0a\"",
+        "\"What's your favorite Bible story? \ud83d\udcd6\"",
+        "\"How can I be kind to others today? \ud83e\udd17\""
+      ]
+    }
+  },
+  {
+    "timestamp": 1719011701.263484,
+    "event_type": "user_message",
+    "data": {
+      "message": "\"Tell me about Jesus \ud83d\ude0a\"",
+      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
+    }
+  },
+  {
+    "timestamp": 1719011705.4391475,
+    "event_type": "assistant_message",
+    "data": {
+      "message": "Hi there! I'd be happy to explain about Jesus in a way that's suitable for children to understand. I'll present both Christian and non-religious perspectives respectfully:\n\nFrom a Christian viewpoint:\nChristians believe Jesus was the son of God who came to Earth as a human to teach people about love, forgiveness, and how to live good lives. They see Jesus as their savior and a very important religious figure.\n\nFrom a non-religious viewpoint:\nPeople who aren't Christian may see Jesus as an important historical figure and teacher who lived long ago and had ideas that influenced many people around the world.\n\nBoth perspectives agree that:\n- Jesus lived about 2000 years ago in a place now called Israel\n- He taught people to be kind to each other\n- His ideas have had a big impact on many people throughout history\n\nDo you have any other questions about Jesus? I'm happy to explain more from different perspectives.",
+      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
+    }
+  },
+  {
+    "timestamp": 1719011708.0548646,
+    "event_type": "suggestions_generated",
+    "data": {
+      "suggestions": [
+        "Here are 4 suggested follow-up prompts:",
+        "\ud83d\ude4f What miracles did Jesus perform?",
+        "\ud83d\udcd6 Share a favorite Bible story about Jesus",
+        "\ud83d\udc96 How can I follow Jesus' teachings today?"
       ]
     }
   }
@@ -685,3 +651,164 @@ if __name__ == '__main__':
 		}
 	]
 }
+## main.py
+
+import os
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context
+import requests
+import json
+import time
+import re
+
+app = Flask(__name__)
+
+OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "anthropic/claude-3.5-sonnet"
+LOG_FILE = 'chat_log.json'
+
+conversation_history = []
+current_prompt = ""
+
+def load_menu_config():
+    with open('menu_config.json', 'r') as f:
+        return json.load(f)
+
+menu_config = load_menu_config()
+
+def log_event(event_type, data):
+    log_entry = {
+        'timestamp': time.time(),
+        'event_type': event_type,
+        'data': data
+    }
+
+    try:
+        with open(LOG_FILE, 'r+') as f:
+            try:
+                log_data = json.load(f)
+            except json.JSONDecodeError:
+                log_data = []
+
+            log_data.append(log_entry)
+
+            f.seek(0)
+            json.dump(log_data, f, indent=2)
+            f.truncate()
+    except FileNotFoundError:
+        with open(LOG_FILE, 'w') as f:
+            json.dump([log_entry], f, indent=2)
+
+def generate_response(messages):
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "https://your-app-url.com",
+        "X-Title": "OpenRouter Chatbot",
+        "Content-Type": "application/json"
+    }
+
+    system_message = {
+        "role": "system",
+        "content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
+    }
+
+    messages = [system_message] + messages
+
+    data = {
+        "model": MODEL,
+        "messages": messages,
+        "stream": True
+    }
+
+    response = requests.post(API_URL, headers=headers, json=data, stream=True)
+
+    for line in response.iter_lines():
+        if line:
+            line = line.decode('utf-8')
+            if line.startswith('data: '):
+                line = line[6:]
+                if line.strip() == '[DONE]':
+                    break
+                try:
+                    json_object = json.loads(line)
+                    content = json_object['choices'][0]['delta'].get('content', '')
+                    if content:
+                        yield content
+                except json.JSONDecodeError:
+                    continue
+
+def generate_suggestions(messages):
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "https://your-app-url.com",
+        "X-Title": "OpenRouter Chatbot",
+        "Content-Type": "application/json"
+    }
+
+    system_message = {
+        "role": "system",
+        "content": f"You are a suggested follow on prompt generator for a christian chatbot, therefore generate 4 very short maximum 10 words, diverse, and relevant suggestions for the user's next desired message based on the current context and conversation history. The suggestions should be appropriate for children and related to the current topic. You can use Markdown syntax and emoticons."
+    }
+
+    prompt = [system_message] + messages
+
+    data = {
+        "model": MODEL,
+        "messages": prompt,
+        "max_tokens": 150
+    }
+
+    response = requests.post(API_URL, headers=headers, json=data)
+    suggestions = response.json()['choices'][0]['message']['content'].split('\n')
+
+    # Remove numbering and any leading/trailing whitespace
+    cleaned_suggestions = [re.sub(r'^\d+\.\s*', '', s.strip()) for s in suggestions if s.strip()]
+
+    return cleaned_suggestions[:4]
+
+@app.route('/')
+def home():
+    return render_template('index.html', menu_config=menu_config)
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    user_message = request.json['message']
+    conversation_history.append({"role": "user", "content": user_message})
+
+    log_event('user_message', {
+        'message': user_message,
+        'prompt': current_prompt
+    })
+
+    def generate():
+        assistant_message = ""
+        for content in generate_response(conversation_history):
+            assistant_message += content
+            yield content
+
+        log_event('assistant_message', {
+            'message': assistant_message,
+            'prompt': current_prompt
+        })
+
+    return Response(stream_with_context(generate()), content_type='text/plain')
+
+@app.route('/suggestions', methods=['GET'])
+def get_suggestions():
+    suggestions = generate_suggestions(conversation_history)
+    log_event('suggestions_generated', {
+        'suggestions': suggestions
+    })
+    return jsonify(suggestions)
+
+@app.route('/set_prompt', methods=['POST'])
+def set_prompt():
+    global current_prompt
+    current_prompt = request.json['prompt']
+    log_event('prompt_set', {
+        'prompt': current_prompt
+    })
+    return jsonify({"status": "success"})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)

@@ -9,11 +9,12 @@ app = Flask(__name__)
 
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4"
+MODEL = "anthropic/claude-3.5-sonnet"
 LOG_FILE = 'chat_log.json'
 
 conversation_history = []
 current_prompt = ""
+current_mode = ""
 
 def load_menu_config():
     with open('menu_config.json', 'r') as f:
@@ -122,7 +123,8 @@ def chat():
 
     log_event('user_message', {
         'message': user_message,
-        'prompt': current_prompt
+        'prompt': current_prompt,
+        'mode': current_mode
     })
 
     def generate():
@@ -133,7 +135,8 @@ def chat():
 
         log_event('assistant_message', {
             'message': assistant_message,
-            'prompt': current_prompt
+            'prompt': current_prompt,
+            'mode': current_mode
         })
 
     return Response(stream_with_context(generate()), content_type='text/plain')
@@ -148,10 +151,12 @@ def get_suggestions():
 
 @app.route('/set_prompt', methods=['POST'])
 def set_prompt():
-    global current_prompt
+    global current_prompt, current_mode
     current_prompt = request.json['prompt']
+    current_mode = request.json.get('mode', '')
     log_event('prompt_set', {
-        'prompt': current_prompt
+        'prompt': current_prompt,
+        'mode': current_mode
     })
     return jsonify({"status": "success"})
 
