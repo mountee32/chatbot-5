@@ -113,19 +113,25 @@
             justify-content: flex-end;
             margin-top: 5px;
             margin-bottom: 5px;
+            padding: 0 10px;
         }
         .suggestion-button {
             background-color: #c6f8ee;
             color: #000;
             border: none;
             border-radius: 15px;
-            padding: 2px 10px;
-            margin: 1px 2px;
+            padding: 5px 10px;
+            margin: 2px;
             cursor: pointer;
             font-size: 0.8em;
             text-align: left;
-            width: 100%;
-            line-height: 1.2;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .suggestion-button.fading {
+            opacity: 0;
+        }
+        .suggestion-button.flying {
+            transform: translateX(-100vw);
         }
     </style>
 </head>
@@ -141,6 +147,7 @@
             </div>
         </div>
         <div id="messages-container" class="messages-container"></div>
+        <div id="suggestions-container" class="suggestions-container"></div>
         <div class="input-area">
             <input type="text" id="user-input" placeholder="Type your message...">
             <button id="send-button">➤</button>
@@ -150,6 +157,7 @@
     <script>
         const md = window.markdownit();
         const messagesContainer = document.getElementById('messages-container');
+        const suggestionsContainer = document.getElementById('suggestions-container');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
 
@@ -174,7 +182,7 @@
             contentDiv.className = 'message-content';
             contentDiv.innerHTML = renderContent(content);
             messageDiv.appendChild(contentDiv);
-
+            
             const timestamp = document.createElement('div');
             timestamp.className = 'timestamp';
             timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -190,18 +198,27 @@
             button.textContent = suggestion;
             button.className = 'suggestion-button';
             button.addEventListener('click', () => {
-                userInput.value = suggestion;
-                sendMessage();
-                removeSuggestions();
+                const buttons = suggestionsContainer.querySelectorAll('.suggestion-button');
+                
+                buttons.forEach((btn) => {
+                    if (btn !== button) {
+                        btn.classList.add('fading');
+                    } else {
+                        btn.classList.add('flying');
+                    }
+                });
+
+                setTimeout(() => {
+                    userInput.value = suggestion;
+                    sendMessage();
+                    removeSuggestions();
+                }, 300);
             });
             return button;
         }
 
         function removeSuggestions() {
-            const suggestionsContainer = document.querySelector('.suggestions-container');
-            if (suggestionsContainer) {
-                suggestionsContainer.remove();
-            }
+            suggestionsContainer.innerHTML = '';
         }
 
         function updateSuggestions() {
@@ -209,13 +226,9 @@
                 .then(response => response.json())
                 .then(suggestions => {
                     removeSuggestions();
-                    const suggestionsContainer = document.createElement('div');
-                    suggestionsContainer.className = 'suggestions-container';
                     suggestions.forEach(suggestion => {
                         suggestionsContainer.appendChild(createSuggestionButton(suggestion));
                     });
-                    messagesContainer.appendChild(suggestionsContainer);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 });
         }
 
