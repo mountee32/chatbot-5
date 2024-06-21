@@ -80,7 +80,7 @@
             contentDiv.className = 'message-content';
             contentDiv.innerHTML = renderContent(content);
             messageDiv.appendChild(contentDiv);
-
+            
             const timestamp = document.createElement('div');
             timestamp.className = 'timestamp';
             timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
