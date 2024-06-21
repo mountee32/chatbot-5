@@ -42,210 +42,218 @@
         </div>
     </div>
 
-                                      <script>
-                                          const md = window.markdownit();
-                                          const menuContainer = document.getElementById('menu-container');
-                                          const menuItems = document.getElementById('menu-items');
-                                          const menuTitle = document.getElementById('menu-title');
-                                          const menuBackButton = document.getElementById('menu-back-button');
-                                          const chatContainer = document.getElementById('chat-container');
-                                          const messagesContainer = document.getElementById('messages-container');
-                                          const suggestionsContainer = document.getElementById('suggestions-container');
-                                          const userInput = document.getElementById('user-input');
-                                          const sendButton = document.getElementById('send-button');
-                                          const chatBackButton = document.getElementById('chat-back-button');
+    <script>
+        const md = window.markdownit();
+        const menuContainer = document.getElementById('menu-container');
+        const menuItems = document.getElementById('menu-items');
+        const menuTitle = document.getElementById('menu-title');
+        const menuBackButton = document.getElementById('menu-back-button');
+        const chatContainer = document.getElementById('chat-container');
+        const messagesContainer = document.getElementById('messages-container');
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const chatBackButton = document.getElementById('chat-back-button');
 
-                                          const emoticons = {
-                                              ':)': '😊', ':(': '😢', ':D': '😃', ';)': '😉', ':P': '😛',
-                                              ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
-                                          };
+        const emoticons = {
+            ':)': '😊', ':(': '😢', ':D': '😃', ';)': '😉', ':P': '😛',
+            ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
+        };
 
-                                          let currentMenu = 'main';
-                                          let menuConfig;
-                                          let currentSubmenu;
+        let currentMenu = 'main';
+        let menuConfig;
+        let currentSubmenu;
 
-                                          function replaceEmoticons(text) {
-                                              return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
-                                          }
+        function replaceEmoticons(text) {
+            return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
+        }
 
-                                          function renderContent(content) {
-                                              const emoticonReplaced = replaceEmoticons(content);
-                                              return md.render(emoticonReplaced);
-                                          }
+        function renderContent(content) {
+            const emoticonReplaced = replaceEmoticons(content);
+            return md.render(emoticonReplaced);
+        }
 
-                                          function addMessage(role, content) {
-                                              const messageDiv = document.createElement('div');
-                                              messageDiv.className = `message ${role}-message`;
-                                              const contentDiv = document.createElement('div');
-                                              contentDiv.className = 'message-content';
-                                              contentDiv.innerHTML = renderContent(content);
-                                              messageDiv.appendChild(contentDiv);
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = renderContent(content);
+            messageDiv.appendChild(contentDiv);
 
-                                              const timestamp = document.createElement('div');
-                                              timestamp.className = 'timestamp';
-                                              timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                              messageDiv.appendChild(timestamp);
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageDiv.appendChild(timestamp);
 
-                                              messagesContainer.appendChild(messageDiv);
-                                              messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                                              return contentDiv;
-                                          }
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return contentDiv;
+        }
 
-                                          function createSuggestionButton(suggestion) {
-                                              const button = document.createElement('button');
-                                              button.textContent = suggestion;
-                                              button.className = 'suggestion-button';
-                                              button.addEventListener('click', () => {
-                                                  userInput.value = suggestion;
-                                                  sendMessage();
-                                                  removeSuggestions();
-                                              });
-                                              return button;
-                                          }
+        function createSuggestionButton(suggestion) {
+            const button = document.createElement('button');
+            button.textContent = suggestion;
+            button.className = 'suggestion-button';
+            button.addEventListener('click', () => {
+                userInput.value = suggestion;
+                sendMessage();
+                removeSuggestions();
+            });
+            return button;
+        }
 
-                                          function removeSuggestions() {
-                                              suggestionsContainer.innerHTML = '';
-                                          }
+        function removeSuggestions() {
+            suggestionsContainer.innerHTML = '';
+        }
 
-                                          function updateSuggestions() {
-                                              fetch('/suggestions')
-                                                  .then(response => response.json())
-                                                  .then(suggestions => {
-                                                      removeSuggestions();
-                                                      suggestions.forEach(suggestion => {
-                                                          suggestionsContainer.appendChild(createSuggestionButton(suggestion));
-                                                      });
-                                                  });
-                                          }
+        function updateSuggestions() {
+            fetch('/suggestions')
+                .then(response => response.json())
+                .then(suggestions => {
+                    removeSuggestions();
+                    suggestions.forEach(suggestion => {
+                        suggestionsContainer.appendChild(createSuggestionButton(suggestion));
+                    });
+                });
+        }
 
-                                          function sendMessage() {
-                                              const message = userInput.value.trim();
-                                              if (message) {
-                                                  addMessage('user', message);
-                                                  userInput.value = '';
-                                                  removeSuggestions();
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage('user', message);
+                userInput.value = '';
+                removeSuggestions();
 
-                                                  fetch('/chat', {
-                                                      method: 'POST',
-                                                      headers: {
-                                                          'Content-Type': 'application/json',
-                                                      },
-                                                      body: JSON.stringify({ message: message }),
-                                                  })
-                                                  .then(response => {
-                                                      const reader = response.body.getReader();
-                                                      const decoder = new TextDecoder();
-                                                      let assistantMessage = '';
-                                                      let messageElement = null;
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                })
+                .then(response => {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let assistantMessage = '';
+                    let messageElement = null;
 
-                                                      function readStream() {
-                                                          reader.read().then(({ done, value }) => {
-                                                              if (done) {
-                                                                  updateSuggestions();
-                                                                  return;
-                                                              }
-                                                              const chunk = decoder.decode(value);
-                                                              assistantMessage += chunk;
-                                                              if (!messageElement) {
-                                                                  messageElement = addMessage('assistant', '');
-                                                              }
-                                                              messageElement.innerHTML = renderContent(assistantMessage);
-                                                              messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                                                              readStream();
-                                                          });
-                                                      }
+                    function readStream() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                updateSuggestions();
+                                return;
+                            }
+                            const chunk = decoder.decode(value);
+                            assistantMessage += chunk;
+                            if (!messageElement) {
+                                messageElement = addMessage('assistant', '');
+                            }
+                            messageElement.innerHTML = renderContent(assistantMessage);
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            readStream();
+                        });
+                    }
 
-                                                      readStream();
-                                                  });
-                                              }
-                                          }
+                    readStream();
+                });
+            }
+        }
 
-                                          function showMainMenu() {
-                                              menuContainer.style.display = 'flex';
-                                              chatContainer.style.display = 'none';
-                                              currentMenu = 'main';
-                                              menuBackButton.style.display = 'none';
-                                              menuTitle.textContent = 'Main Menu';
-                                              createMenu(menuConfig);
-                                          }
+        function showMainMenu() {
+            menuContainer.style.display = 'flex';
+            chatContainer.style.display = 'none';
+            currentMenu = 'main';
+            menuBackButton.style.display = 'none';
+            menuTitle.textContent = 'Main Menu';
+            createMenu(menuConfig);
+        }
 
-                                          function showSubMenu(submenu, title) {
-                                              menuContainer.style.display = 'flex';
-                                              chatContainer.style.display = 'none';
-                                              currentMenu = 'sub';
-                                              menuBackButton.style.display = 'block';
-                                              menuTitle.textContent = title;
-                                              createSubmenu(submenu);
-                                          }
+        function showSubMenu(submenu, title) {
+            menuContainer.style.display = 'flex';
+            chatContainer.style.display = 'none';
+            currentMenu = 'sub';
+            menuBackButton.style.display = 'block';
+            menuTitle.textContent = title;
+            createSubmenu(submenu);
+        }
 
-                                          function showChat() {
-                                              menuContainer.style.display = 'none';
-                                              chatContainer.style.display = 'flex';
-                                              currentMenu = 'chat';
-                                          }
+        function showChat() {
+            menuContainer.style.display = 'none';
+            chatContainer.style.display = 'flex';
+            currentMenu = 'chat';
+        }
 
-                                          function createMenu(menuConfig) {
-                                              menuItems.innerHTML = '';
-                                              menuConfig.menu.forEach(item => {
-                                                  const menuItem = document.createElement('div');
-                                                  menuItem.className = 'menu-item';
-                                                  menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
-                                                  menuItems.appendChild(menuItem);
+        function createMenu(menuConfig) {
+            menuItems.innerHTML = '';
+            menuConfig.menu.forEach(item => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
+                menuItems.appendChild(menuItem);
 
-                                                  menuItem.addEventListener('click', () => {
-                                                      currentSubmenu = item.submenu;
-                                                      showSubMenu(item.submenu, item.name);
-                                                  });
-                                              });
-                                          }
+                menuItem.addEventListener('click', () => {
+                    currentSubmenu = item.submenu;
+                    showSubMenu(item.submenu, item.name);
+                });
+            });
+        }
 
-                                          function createSubmenu(submenu) {
-                                              menuItems.innerHTML = '';
-                                              submenu.forEach(subItem => {
-                                                  const submenuItem = document.createElement('div');
-                                                  submenuItem.className = 'submenu-item';
-                                                  submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
-                                                  submenuItem.addEventListener('click', () => {
-                                                      fetch('/set_prompt', {
-                                                          method: 'POST',
-                                                          headers: {
-                                                              'Content-Type': 'application/json',
-                                                          },
-                                                          body: JSON.stringify({ prompt: subItem.prompt }),
-                                                      })
-                                                      .then(() => {
-                                                          showChat();
-                                                          addMessage('assistant', `Welcome to ${subItem.name}! How can I help you?`);
-                                                      });
-                                                  });
-                                                  menuItems.appendChild(submenuItem);
-                                              });
-                                          }
+        function createSubmenu(submenu) {
+            menuItems.innerHTML = '';
+            submenu.forEach(subItem => {
+                const submenuItem = document.createElement('div');
+                submenuItem.className = 'submenu-item';
+                submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
+                submenuItem.addEventListener('click', () => {
+                    fetch('/set_prompt', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ prompt: subItem.prompt }),
+                    })
+                    .then(() => {
+                        showChat();
+                        resetChat();
+                        addMessage('assistant', `Welcome to ${subItem.name}! How can I help you?`);
+                    });
+                });
+                menuItems.appendChild(submenuItem);
+            });
+        }
 
-                                          function initializeMenu(config) {
-                                              menuConfig = config;
-                                              showMainMenu();
-                                          }
+        function resetChat() {
+            messagesContainer.innerHTML = '';
+            removeSuggestions();
+        }
 
-                                          sendButton.addEventListener('click', sendMessage);
-                                          userInput.addEventListener('keypress', (e) => {
-                                              if (e.key === 'Enter') {
-                                                  sendMessage();
-                                              }
-                                          });
+        function initializeMenu(config) {
+            menuConfig = config;
+            showMainMenu();
+        }
 
-                                          menuBackButton.addEventListener('click', () => {
-                                              if (currentMenu === 'sub') {
-                                                  showMainMenu();
-                                              }
-                                          });
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
 
-                                          chatBackButton.addEventListener('click', () => {
-                                              if (currentMenu === 'chat') {
-                                                  showSubMenu(currentSubmenu, menuTitle.textContent);
-                                              }
-                                          });
+        menuBackButton.addEventListener('click', () => {
+            if (currentMenu === 'sub') {
+                showMainMenu();
+            }
+        });
 
-                                          // Initialize the menu
-                                          initializeMenu({{ menu_config | tojson | safe }});
-                                      </script>
+        chatBackButton.addEventListener('click', () => {
+            if (currentMenu === 'chat') {
+                showSubMenu(currentSubmenu, menuTitle.textContent);
+            }
+        });
+
+        // Initialize the menu
+        initializeMenu({{ menu_config | tojson | safe }});
+    </script>
+</body>
+</html>
