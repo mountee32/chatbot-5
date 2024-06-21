@@ -19,6 +19,14 @@ def generate_response(messages):
         "Content-Type": "application/json"
     }
 
+    # Add instruction for Markdown and emoticons
+    system_message = {
+        "role": "system",
+        "content": "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
+    }
+
+    messages = [system_message] + messages
+
     data = {
         "model": MODEL,
         "messages": messages,
@@ -50,7 +58,7 @@ def generate_suggestions(messages):
         "Content-Type": "application/json"
     }
 
-    prompt = messages + [{"role": "system", "content": "Generate 4 short, diverse suggestions for the user's next message. Each suggestion should be a complete sentence and should be relevant to the conversation history."}]
+    prompt = messages + [{"role": "system", "content": "Generate 4 short, diverse suggestions for the user's next message. Each suggestion should be a complete sentence and should be relevant to the conversation history. You can use Markdown syntax and emoticons."}]
 
     data = {
         "model": MODEL,
