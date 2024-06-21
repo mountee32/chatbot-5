@@ -13,9 +13,9 @@
             background-color: #f0f0f0;
         }
         .chat-container {
-            max-width: 500px;
+            width: 100%;
             height: 100%;
-            margin: auto;
+            margin: 0;
             display: flex;
             flex-direction: column;
             background: linear-gradient(to bottom, #4a4a7d, #5a5a8a);
@@ -126,7 +126,6 @@
             text-align: left;
             width: 100%;
             line-height: 1.2;
-            transition: opacity 0.3s ease;
         }
     </style>
 </head>
@@ -175,7 +174,7 @@
             contentDiv.className = 'message-content';
             contentDiv.innerHTML = renderContent(content);
             messageDiv.appendChild(contentDiv);
-            
+
             const timestamp = document.createElement('div');
             timestamp.className = 'timestamp';
             timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -191,27 +190,9 @@
             button.textContent = suggestion;
             button.className = 'suggestion-button';
             button.addEventListener('click', () => {
-                const suggestionsContainer = document.querySelector('.suggestions-container');
-                const buttons = suggestionsContainer.querySelectorAll('.suggestion-button');
-                
-                // Fade out unselected buttons
-                buttons.forEach(btn => {
-                    if (btn !== button) {
-                        btn.style.opacity = '0';
-                    }
-                });
-
-                // Fade out selected button after a short delay
-                setTimeout(() => {
-                    button.style.opacity = '0';
-                    
-                    // Set input value and send message after fade out
-                    setTimeout(() => {
-                        userInput.value = suggestion;
-                        sendMessage();
-                        removeSuggestions();
-                    }, 300);
-                }, 300);
+                userInput.value = suggestion;
+                sendMessage();
+                removeSuggestions();
             });
             return button;
         }

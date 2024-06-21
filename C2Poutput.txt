@@ -8,7 +8,8 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 -----
-when i click a suggested answer button, 1. make the unselected answers fade first and then the selcrted and swer fade afterwards for emphaisie 
+how do we make the chat full vertical and hoszontal width
+
 ## templates/index.html
 
 <!DOCTYPE html>
