@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, Response, stream_wit
 import requests
 import json
 import time
+import re
 
 app = Flask(__name__)
 
@@ -89,7 +90,12 @@ def generate_suggestions(messages):
         "Content-Type": "application/json"
     }
 
-    prompt = messages + [{"role": "system", "content": "Generate 4 short, diverse suggestions for the user's next message.  You can use Markdown syntax and emoticons."}]
+    system_message = {
+        "role": "system",
+        "content": f"You are a suggested follow on prompt generator for a christian chatbot, therefore generate 4 very short maximum 10 words, diverse, and relevant suggestions for the user's next desired message based on the current context and conversation history. The suggestions should be appropriate for children and related to the current topic. You can use Markdown syntax and emoticons."
+    }
+
+    prompt = [system_message] + messages
 
     data = {
         "model": MODEL,
@@ -99,7 +105,11 @@ def generate_suggestions(messages):
 
     response = requests.post(API_URL, headers=headers, json=data)
     suggestions = response.json()['choices'][0]['message']['content'].split('\n')
-    return [s.strip() for s in suggestions if s.strip()][:4]
+
+    # Remove numbering and any leading/trailing whitespace
+    cleaned_suggestions = [re.sub(r'^\d+\.\s*', '', s.strip()) for s in suggestions if s.strip()]
+
+    return cleaned_suggestions[:4]
 
 @app.route('/')
 def home():
