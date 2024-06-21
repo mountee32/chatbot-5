@@ -2,12 +2,14 @@ import os
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 import requests
 import json
+import time
 
 app = Flask(__name__)
 
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "openai/gpt-4"
+LOG_FILE = 'chat_log.json'
 
 conversation_history = []
 current_prompt = ""
@@ -17,6 +19,29 @@ def load_menu_config():
         return json.load(f)
 
 menu_config = load_menu_config()
+
+def log_event(event_type, data):
+    log_entry = {
+        'timestamp': time.time(),
+        'event_type': event_type,
+        'data': data
+    }
+
+    try:
+        with open(LOG_FILE, 'r+') as f:
+            try:
+                log_data = json.load(f)
+            except json.JSONDecodeError:
+                log_data = []
+
+            log_data.append(log_entry)
+
+            f.seek(0)
+            json.dump(log_data, f, indent=2)
+            f.truncate()
+    except FileNotFoundError:
+        with open(LOG_FILE, 'w') as f:
+            json.dump([log_entry], f, indent=2)
 
 def generate_response(messages):
     headers = {
@@ -85,21 +110,39 @@ def chat():
     user_message = request.json['message']
     conversation_history.append({"role": "user", "content": user_message})
 
+    log_event('user_message', {
+        'message': user_message,
+        'prompt': current_prompt
+    })
+
     def generate():
+        assistant_message = ""
         for content in generate_response(conversation_history):
+            assistant_message += content
             yield content
+
+        log_event('assistant_message', {
+            'message': assistant_message,
+            'prompt': current_prompt
+        })
 
     return Response(stream_with_context(generate()), content_type='text/plain')
 
 @app.route('/suggestions', methods=['GET'])
 def get_suggestions():
     suggestions = generate_suggestions(conversation_history)
+    log_event('suggestions_generated', {
+        'suggestions': suggestions
+    })
     return jsonify(suggestions)
 
 @app.route('/set_prompt', methods=['POST'])
 def set_prompt():
     global current_prompt
     current_prompt = request.json['prompt']
+    log_event('prompt_set', {
+        'prompt': current_prompt
+    })
     return jsonify({"status": "success"})
 
 if __name__ == '__main__':
