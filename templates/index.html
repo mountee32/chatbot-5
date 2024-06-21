@@ -1,436 +1,444 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christian Children's Education Chat</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
-    <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        .container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(to bottom, #4a4a7d, #5a5a8a);
-        }
-        .menu-container {
-            background-color: #3c3c6e;
-            color: white;
-            padding: 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        .menu-item, .submenu-item {
-            cursor: pointer;
-            padding: 10px 20px;
-            margin: 10px 0;
-            background-color: #5a5a8a;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-            text-align: center;
-            width: 200px;
-        }
-        .menu-item:hover, .submenu-item:hover {
-            background-color: #6b6ba8;
-        }
-        .submenu {
-            display: none;
-        }
-        .chat-container {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-        }
-        .chat-header {
-            background-color: #3c3c6e;
-            color: white;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-        }
-        .profile-pic {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #5a5a8a;
-            margin-right: 10px;
-        }
-        .chat-title {
-            flex-grow: 1;
-        }
-        .header-icons span {
-            margin-left: 15px;
-            cursor: pointer;
-        }
-        .messages-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 5px;
-        }
-        .message {
-            max-width: 80%;
-            margin-bottom: 2px;
-            clear: both;
-        }
-        .message-content {
-            padding: 4px 8px;
-            border-radius: 18px;
-            display: inline-block;
-            word-wrap: break-word;
-            max-width: 100%;
-        }
-        .message-content p {
-            margin: 0;
-        }
-        .message-content img.emoji {
-            height: 1.2em;
-            width: 1.2em;
-            margin: 0 .05em 0 .1em;
-            vertical-align: -0.1em;
-        }
-        .user-message {
-            float: right;
-        }
-        .user-message .message-content {
-            background-color: #dcf8c6;
-        }
-        .assistant-message {
-            float: left;
-        }
-        .assistant-message .message-content {
-            background-color: #ffffff;
-        }
-        .timestamp {
-            font-size: 0.7em;
-            color: #a0a0a0;
-            margin-top: 1px;
-            clear: both;
-        }
-        .input-area {
-            background-color: #3c3c6e;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-        }
-        #user-input {
-            flex-grow: 1;
-            border: none;
-            border-radius: 20px;
-            padding: 10px 15px;
-            margin-right: 10px;
-            background-color: #5a5a8a;
-            color: white;
-        }
-        #send-button {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 1.2em;
-        }
-        .suggestions-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            margin-top: 5px;
-            margin-bottom: 5px;
-            padding: 0 10px;
-        }
-        .suggestion-button {
-            background-color: #c6f8ee;
-            color: #000;
-            border: none;
-            border-radius: 15px;
-            padding: 5px 10px;
-            margin: 2px;
-            cursor: pointer;
-            font-size: 0.8em;
-            text-align: left;
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        .suggestion-button.fading {
-            opacity: 0;
-        }
-        .suggestion-button.flying {
-            transform: translateX(-100vw);
-        }
-        .back-button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5em;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-        .menu-header {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        .menu-title {
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="menu-container" id="menu-container">
-            <div class="menu-header">
-                <button id="menu-back-button" class="back-button" style="display: none;">←</button>
-                <div class="menu-title" id="menu-title"></div>
-            </div>
-            <div id="menu-items"></div>
-        </div>
-        <div class="chat-container" id="chat-container">
-            <div class="chat-header">
-                <button id="chat-back-button" class="back-button">←</button>
-                <div class="profile-pic"></div>
-                <div class="chat-title">Christian Children's Education Chat</div>
-                <div class="header-icons">
-                    <span>📞</span>
-                    <span>📹</span>
-                    <span>⋮</span>
-                </div>
-            </div>
-            <div id="messages-container" class="messages-container"></div>
-            <div id="suggestions-container" class="suggestions-container"></div>
-            <div class="input-area">
-                <input type="text" id="user-input" placeholder="Type your message...">
-                <button id="send-button">➤</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const md = window.markdownit();
-        const menuContainer = document.getElementById('menu-container');
-        const menuItems = document.getElementById('menu-items');
-        const menuTitle = document.getElementById('menu-title');
-        const menuBackButton = document.getElementById('menu-back-button');
-        const chatContainer = document.getElementById('chat-container');
-        const messagesContainer = document.getElementById('messages-container');
-        const suggestionsContainer = document.getElementById('suggestions-container');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const chatBackButton = document.getElementById('chat-back-button');
-
-        const emoticons = {
-            ':)': '😊', ':(': '😢', ':D': '😃', ';)': '😉', ':P': '😛',
-            ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
-        };
-
-        let currentMenu = 'main'; // 'main', 'sub', or 'chat'
-        let menuConfig;
-        let currentSubmenu;
-
-        function replaceEmoticons(text) {
-            return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
-        }
-
-        function renderContent(content) {
-            const emoticonReplaced = replaceEmoticons(content);
-            return md.render(emoticonReplaced);
-        }
-
-        function addMessage(role, content) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}-message`;
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.innerHTML = renderContent(content);
-            messageDiv.appendChild(contentDiv);
-            
-            const timestamp = document.createElement('div');
-            timestamp.className = 'timestamp';
-            timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            messageDiv.appendChild(timestamp);
-
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            return contentDiv;
-        }
-
-        function createSuggestionButton(suggestion) {
-            const button = document.createElement('button');
-            button.textContent = suggestion;
-            button.className = 'suggestion-button';
-            button.addEventListener('click', () => {
-                const buttons = suggestionsContainer.querySelectorAll('.suggestion-button');
-                
-                buttons.forEach((btn) => {
-                    if (btn !== button) {
-                        btn.classList.add('fading');
-                    } else {
-                        btn.classList.add('flying');
-                    }
-                });
-
-                setTimeout(() => {
-                    userInput.value = suggestion;
-                    sendMessage();
-                    removeSuggestions();
-                }, 300);
-            });
-            return button;
-        }
-
-        function removeSuggestions() {
-            suggestionsContainer.innerHTML = '';
-        }
-
-        function updateSuggestions() {
-            fetch('/suggestions')
-                .then(response => response.json())
-                .then(suggestions => {
-                    removeSuggestions();
-                    suggestions.forEach(suggestion => {
-                        suggestionsContainer.appendChild(createSuggestionButton(suggestion));
-                    });
-                });
-        }
-
-        function sendMessage() {
-            const message = userInput.value.trim();
-            if (message) {
-                addMessage('user', message);
-                userInput.value = '';
-                removeSuggestions();
-
-                fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: message }),
-                })
-                .then(response => {
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder();
-                    let assistantMessage = '';
-                    let messageElement = null;
-
-                    function readStream() {
-                        reader.read().then(({ done, value }) => {
-                            if (done) {
-                                updateSuggestions();
-                                return;
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Christian Children's Education Chat</title>
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+                        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+                        <style>
+                            body, html {
+                                height: 100%;
+                                margin: 0;
+                                font-family: 'Roboto', sans-serif;
+                                background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+                                color: #ffffff;
                             }
-                            const chunk = decoder.decode(value);
-                            assistantMessage += chunk;
-                            if (!messageElement) {
-                                messageElement = addMessage('assistant', '');
+                            .container {
+                                width: 100%;
+                                height: 100%;
+                                display: flex;
+                                flex-direction: column;
                             }
-                            messageElement.innerHTML = renderContent(assistantMessage);
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                            readStream();
-                        });
-                    }
+                            .menu-container {
+                                background-color: rgba(255, 255, 255, 0.1);
+                                backdrop-filter: blur(10px);
+                                border-radius: 20px;
+                                padding: 30px;
+                                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                                margin: 20px;
+                                flex-grow: 1;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: flex-start;
+                            }
+                            .menu-header {
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                margin-bottom: 20px;
+                                width: 100%;
+                            }
+                            .menu-title {
+                                font-size: 2.5em;
+                                font-weight: 700;
+                                text-align: center;
+                                text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+                            }
+                            .menu-item, .submenu-item {
+                                cursor: pointer;
+                                padding: 15px 25px;
+                                margin: 15px 0;
+                                background-color: rgba(255, 255, 255, 0.2);
+                                border-radius: 10px;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                font-size: 1.2em;
+                                width: 250px;
+                            }
+                            .menu-item:hover, .submenu-item:hover {
+                                background-color: rgba(255, 255, 255, 0.3);
+                                transform: translateY(-5px);
+                                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                            }
+                            .menu-item i, .submenu-item i {
+                                margin-right: 15px;
+                                font-size: 1.5em;
+                            }
+                            .header-image {
+                                width: 100%;
+                                height: 200px;
+                                background-image: url('https://example.com/your-header-image.jpg');
+                                background-size: cover;
+                                background-position: center;
+                                border-radius: 20px 20px 0 0;
+                                margin-bottom: 20px;
+                            }
+                            .chat-container {
+                                display: none;
+                                flex-direction: column;
+                                height: 100%;
+                                background-color: rgba(255, 255, 255, 0.1);
+                                backdrop-filter: blur(10px);
+                                border-radius: 20px;
+                                margin: 20px;
+                                overflow: hidden;
+                            }
+                            .chat-header {
+                                background-color: rgba(255, 255, 255, 0.2);
+                                padding: 20px;
+                                display: flex;
+                                align-items: center;
+                            }
+                            .profile-pic {
+                                width: 40px;
+                                height: 40px;
+                                border-radius: 50%;
+                                background-color: #5a5a8a;
+                                margin-right: 10px;
+                            }
+                            .chat-title {
+                                flex-grow: 1;
+                                font-size: 1.2em;
+                                font-weight: bold;
+                            }
+                            .header-icons span {
+                                margin-left: 15px;
+                                cursor: pointer;
+                            }
+                            .messages-container {
+                                flex-grow: 1;
+                                overflow-y: auto;
+                                padding: 20px;
+                            }
+                            .message {
+                                max-width: 80%;
+                                margin-bottom: 15px;
+                                clear: both;
+                            }
+                            .message-content {
+                                padding: 10px 15px;
+                                border-radius: 18px;
+                                display: inline-block;
+                                word-wrap: break-word;
+                                max-width: 100%;
+                            }
+                            .user-message {
+                                float: right;
+                            }
+                            .user-message .message-content {
+                                background-color: #dcf8c6;
+                                color: #000;
+                            }
+                            .assistant-message {
+                                float: left;
+                            }
+                            .assistant-message .message-content {
+                                background-color: #ffffff;
+                                color: #000;
+                            }
+                            .timestamp {
+                                font-size: 0.7em;
+                                color: rgba(255, 255, 255, 0.7);
+                                margin-top: 5px;
+                                clear: both;
+                            }
+                            .input-area {
+                                background-color: rgba(255, 255, 255, 0.2);
+                                padding: 20px;
+                                display: flex;
+                                align-items: center;
+                            }
+                            #user-input {
+                                flex-grow: 1;
+                                border: none;
+                                border-radius: 20px;
+                                padding: 10px 15px;
+                                margin-right: 10px;
+                                background-color: rgba(255, 255, 255, 0.3);
+                                color: #fff;
+                            }
+                            #send-button {
+                                background: none;
+                                border: none;
+                                color: white;
+                                cursor: pointer;
+                                font-size: 1.2em;
+                            }
+                            .suggestions-container {
+                                display: flex;
+                                flex-wrap: wrap;
+                                justify-content: flex-end;
+                                margin-top: 10px;
+                                margin-bottom: 10px;
+                                padding: 0 20px;
+                            }
+                            .suggestion-button {
+                                background-color: rgba(255, 255, 255, 0.3);
+                                color: #fff;
+                                border: none;
+                                border-radius: 15px;
+                                padding: 5px 10px;
+                                margin: 5px;
+                                cursor: pointer;
+                                font-size: 0.9em;
+                                transition: all 0.3s ease;
+                            }
+                            .suggestion-button:hover {
+                                background-color: rgba(255, 255, 255, 0.4);
+                            }
+                            .back-button {
+                                background: none;
+                                border: none;
+                                color: white;
+                                font-size: 1.5em;
+                                cursor: pointer;
+                                margin-right: 10px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="menu-container" id="menu-container">
+                                <div class="header-image"></div>
+                                <div class="menu-header">
+                                    <button id="menu-back-button" class="back-button" style="display: none;">
+                                        <i class="fas fa-arrow-left"></i>
+                                    </button>
+                                    <div class="menu-title" id="menu-title">Main Menu</div>
+                                </div>
+                                <div id="menu-items"></div>
+                            </div>
+                            <div class="chat-container" id="chat-container">
+                                <div class="chat-header">
+                                    <button id="chat-back-button" class="back-button">
+                                        <i class="fas fa-arrow-left"></i>
+                                    </button>
+                                    <div class="profile-pic"></div>
+                                    <div class="chat-title">Christian Children's Education Chat</div>
+                                    <div class="header-icons">
+                                        <span><i class="fas fa-phone"></i></span>
+                                        <span><i class="fas fa-video"></i></span>
+                                        <span><i class="fas fa-ellipsis-v"></i></span>
+                                    </div>
+                                </div>
+                                <div id="messages-container" class="messages-container"></div>
+                                <div id="suggestions-container" class="suggestions-container"></div>
+                                <div class="input-area">
+                                    <input type="text" id="user-input" placeholder="Type your message...">
+                                    <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                        </div>
 
-                    readStream();
-                });
-            }
-        }
+                        <script>
+                            const md = window.markdownit();
+                            const menuContainer = document.getElementById('menu-container');
+                            const menuItems = document.getElementById('menu-items');
+                            const menuTitle = document.getElementById('menu-title');
+                            const menuBackButton = document.getElementById('menu-back-button');
+                            const chatContainer = document.getElementById('chat-container');
+                            const messagesContainer = document.getElementById('messages-container');
+                            const suggestionsContainer = document.getElementById('suggestions-container');
+                            const userInput = document.getElementById('user-input');
+                            const sendButton = document.getElementById('send-button');
+                            const chatBackButton = document.getElementById('chat-back-button');
 
-        function showMainMenu() {
-            menuContainer.style.display = 'flex';
-            chatContainer.style.display = 'none';
-            currentMenu = 'main';
-            menuBackButton.style.display = 'none';
-            menuTitle.textContent = 'Main Menu';
-            createMenu(menuConfig);
-        }
+                            const emoticons = {
+                                ':)': '😊', ':(': '😢', ':D': '😃', ';)': '😉', ':P': '😛',
+                                ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
+                            };
 
-        function showSubMenu(submenu, title) {
-            menuContainer.style.display = 'flex';
-            chatContainer.style.display = 'none';
-            currentMenu = 'sub';
-            menuBackButton.style.display = 'block';
-            menuTitle.textContent = title;
-            createSubmenu(submenu);
-        }
+                            let currentMenu = 'main';
+                            let menuConfig;
+                            let currentSubmenu;
 
-        function showChat() {
-            menuContainer.style.display = 'none';
-            chatContainer.style.display = 'flex';
-            currentMenu = 'chat';
-        }
+                            function replaceEmoticons(text) {
+                                return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
+                            }
 
-        function createMenu(menuConfig) {
-            menuItems.innerHTML = '';
-            menuConfig.menu.forEach(item => {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'menu-item';
-                menuItem.textContent = item.name;
-                menuItems.appendChild(menuItem);
+                            function renderContent(content) {
+                                const emoticonReplaced = replaceEmoticons(content);
+                                return md.render(emoticonReplaced);
+                            }
 
-                menuItem.addEventListener('click', () => {
-                    currentSubmenu = item.submenu;
-                    showSubMenu(item.submenu, item.name);
-                });
-            });
-        }
+                            function addMessage(role, content) {
+                                const messageDiv = document.createElement('div');
+                                messageDiv.className = `message ${role}-message`;
+                                const contentDiv = document.createElement('div');
+                                contentDiv.className = 'message-content';
+                                contentDiv.innerHTML = renderContent(content);
+                                messageDiv.appendChild(contentDiv);
 
-        function createSubmenu(submenu) {
-            menuItems.innerHTML = '';
-            submenu.forEach(subItem => {
-                const submenuItem = document.createElement('div');
-                submenuItem.className = 'submenu-item';
-                submenuItem.textContent = subItem.name;
-                submenuItem.addEventListener('click', () => {
-                    fetch('/set_prompt', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ prompt: subItem.prompt }),
-                    })
-                    .then(() => {
-                        showChat();
-                        addMessage('assistant', `Welcome to ${subItem.name}! How can I help you?`);
-                    });
-                });
-                menuItems.appendChild(submenuItem);
-            });
-        }
+                                const timestamp = document.createElement('div');
+                                timestamp.className = 'timestamp';
+                                timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                messageDiv.appendChild(timestamp);
 
-        function initializeMenu(config) {
-            menuConfig = config;
-            showMainMenu();
-        }
+                                messagesContainer.appendChild(messageDiv);
+                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                return contentDiv;
+                            }
 
-        sendButton.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
+                            function createSuggestionButton(suggestion) {
+                                const button = document.createElement('button');
+                                button.textContent = suggestion;
+                                button.className = 'suggestion-button';
+                                button.addEventListener('click', () => {
+                                    userInput.value = suggestion;
+                                    sendMessage();
+                                    removeSuggestions();
+                                });
+                                return button;
+                            }
 
-        menuBackButton.addEventListener('click', () => {
-            if (currentMenu === 'sub') {
-                showMainMenu();
-            }
-        });
+                            function removeSuggestions() {
+                                suggestionsContainer.innerHTML = '';
+                            }
 
-        chatBackButton.addEventListener('click', () => {
-            if (currentMenu === 'chat') {
-                showSubMenu(currentSubmenu, menuTitle.textContent);
-            }
-        });
+                            function updateSuggestions() {
+                                fetch('/suggestions')
+                                    .then(response => response.json())
+                                    .then(suggestions => {
+                                        removeSuggestions();
+                                        suggestions.forEach(suggestion => {
+                                            suggestionsContainer.appendChild(createSuggestionButton(suggestion));
+                                        });
+                                    });
+                            }
 
-        // Initialize the menu
-        initializeMenu({{ menu_config | tojson | safe }});
-    </script>
-</body>
-</html>
+                            function sendMessage() {
+                                const message = userInput.value.trim();
+                                if (message) {
+                                    addMessage('user', message);
+                                    userInput.value = '';
+                                    removeSuggestions();
+
+                                    fetch('/chat', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ message: message }),
+                                    })
+                                    .then(response => {
+                                        const reader = response.body.getReader();
+                                        const decoder = new TextDecoder();
+                                        let assistantMessage = '';
+                                        let messageElement = null;
+
+                                        function readStream() {
+                                            reader.read().then(({ done, value }) => {
+                                                if (done) {
+                                                    updateSuggestions();
+                                                    return;
+                                                }
+                                                const chunk = decoder.decode(value);
+                                                assistantMessage += chunk;
+                                                if (!messageElement) {
+                                                    messageElement = addMessage('assistant', '');
+                                                }
+                                                messageElement.innerHTML = renderContent(assistantMessage);
+                                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                                readStream();
+                                            });
+                                        }
+
+                                        readStream();
+                                    });
+                                }
+                            }
+
+                            function showMainMenu() {
+                                menuContainer.style.display = 'flex';
+                                chatContainer.style.display = 'none';
+                                currentMenu = 'main';
+                                menuBackButton.style.display = 'none';
+                                menuTitle.textContent = 'Main Menu';
+                                createMenu(menuConfig);
+                            }
+
+                            function showSubMenu(submenu, title) {
+                                menuContainer.style.display = 'flex';
+                                chatContainer.style.display = 'none';
+                                currentMenu = 'sub';
+                                menuBackButton.style.display = 'block';
+                                menuTitle.textContent = title;
+                                createSubmenu(submenu);
+                            }
+
+                            function showChat() {
+                                menuContainer.style.display = 'none';
+                                chatContainer.style.display = 'flex';
+                                currentMenu = 'chat';
+                            }
+
+                            function createMenu(menuConfig) {
+                                menuItems.innerHTML = '';
+                                menuConfig.menu.forEach(item => {
+                                    const menuItem = document.createElement('div');
+                                    menuItem.className = 'menu-item';
+                                    menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
+                                    menuItems.appendChild(menuItem);
+
+                                    menuItem.addEventListener('click', () => {
+                                        currentSubmenu = item.submenu;
+                                        showSubMenu(item.submenu, item.name);
+                                    });
+                                });
+                            }
+
+                            function createSubmenu(submenu) {
+                                menuItems.innerHTML = '';
+                                submenu.forEach(subItem => {
+                                    const submenuItem = document.createElement('div');
+                                    submenuItem.className = 'submenu-item';
+                                    submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
+                                    submenuItem.addEventListener('click', () => {
+                                        fetch('/set_prompt', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify({ prompt: subItem.prompt }),
+                                        })
+                                        .then(() => {
+                                            showChat();
+                                            addMessage('assistant', `Welcome to ${subItem.name}! How can I help you?`);
+                                        }); });
+                                    menuItems.appendChild(submenuItem);
+                                });
+                            }
+
+                            function initializeMenu(config) {
+                                menuConfig = config;
+                                showMainMenu();
+                            }
+
+                            sendButton.addEventListener('click', sendMessage);
+                            userInput.addEventListener('keypress', (e) => {
+                                if (e.key === 'Enter') {
+                                    sendMessage();
+                                }
+                            });
+
+                            menuBackButton.addEventListener('click', () => {
+                                if (currentMenu === 'sub') {
+                                    showMainMenu();
+                                }
+                            });
+
+                            chatBackButton.addEventListener('click', () => {
+                                if (currentMenu === 'chat') {
+                                    showSubMenu(currentSubmenu, menuTitle.textContent);
+                                }
+                            });
+
+                            // Initialize the menu
+                            initializeMenu({{ menu_config | tojson | safe }});
+                        </script>
+                    </body>
+                    </html>
