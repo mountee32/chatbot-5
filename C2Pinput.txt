@@ -10,5 +10,5 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 -----
-in the world view section how can I add WLC v Dawkins sub option that allows for both william lane craig and dawkins to answer each question from their perspectives
+how do we get the quiz to start rather than just message "Welcome to Maths Magic ✨! How can I help you?" which does not explain what to do
 

@@ -1,15 +1,19 @@
 import os
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context
-import requests
+import logging
 import json
 import time
 import re
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context
+import requests
+
+# Set up Python's logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "anthropic/claude-3.5-sonnet"
+MODEL = "openai/gpt-4o"
 LOG_FILE = 'chat_log.json'
 
 conversation_history = []
@@ -29,6 +33,7 @@ def log_event(event_type, data):
         'data': data
     }
 
+    # Log to JSON file
     try:
         with open(LOG_FILE, 'r+') as f:
             try:
@@ -44,6 +49,9 @@ def log_event(event_type, data):
     except FileNotFoundError:
         with open(LOG_FILE, 'w') as f:
             json.dump([log_entry], f, indent=2)
+
+    # Also log using Python's logging
+    logging.info(f"Event: {event_type}, Data: {json.dumps(data, indent=2)}")
 
 def generate_response(messages):
     headers = {
@@ -96,21 +104,52 @@ def generate_suggestions(messages):
         "content": f"You are a suggested follow on prompt generator for a christian chatbot, therefore generate 4 very short maximum 10 words, diverse, and relevant suggestions for the user's next desired message based on the current context and conversation history. The suggestions should be appropriate for children and related to the current topic. You can use Markdown syntax and emoticons."
     }
 
-    prompt = [system_message] + messages
+    # Include the current prompt in the messages
+    prompt_message = {"role": "system", "content": current_prompt}
+    full_messages = [system_message, prompt_message] + messages
 
     data = {
         "model": MODEL,
-        "messages": prompt,
+        "messages": full_messages,
         "max_tokens": 150
     }
 
-    response = requests.post(API_URL, headers=headers, json=data)
-    suggestions = response.json()['choices'][0]['message']['content'].split('\n')
+    log_event('suggestion_request', {'data': data})
+    logging.debug(f"Sending request to API with data: {json.dumps(data, indent=2)}")
 
-    # Remove numbering and any leading/trailing whitespace
-    cleaned_suggestions = [re.sub(r'^\d+\.\s*', '', s.strip()) for s in suggestions if s.strip()]
+    try:
+        response = requests.post(API_URL, headers=headers, json=data)
+        response.raise_for_status()
 
-    return cleaned_suggestions[:4]
+        log_event('suggestion_response', {'status_code': response.status_code, 'content': response.text})
+        logging.debug(f"Received response from API: {response.status_code}")
+        logging.debug(f"Response content: {response.text}")
+
+        response_json = response.json()
+        suggestions = response_json['choices'][0]['message']['content'].split('\n')
+
+        log_event('raw_suggestions', {'suggestions': suggestions})
+        logging.debug(f"Raw suggestions: {suggestions}")
+
+        # Remove numbering and any leading/trailing whitespace
+        cleaned_suggestions = [re.sub(r'^\d+\.\s*', '', s.strip()) for s in suggestions if s.strip()]
+
+        log_event('cleaned_suggestions', {'suggestions': cleaned_suggestions})
+        logging.debug(f"Cleaned suggestions: {cleaned_suggestions}")
+
+        return cleaned_suggestions[:4]
+
+    except requests.RequestException as e:
+        error_msg = f"Error making request to API: {str(e)}"
+        log_event('suggestion_error', {'error': error_msg})
+        logging.error(error_msg)
+        return []
+
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        error_msg = f"Error parsing API response: {str(e)}"
+        log_event('suggestion_error', {'error': error_msg})
+        logging.error(error_msg)
+        return []
 
 @app.route('/')
 def home():
@@ -118,6 +157,7 @@ def home():
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    global conversation_history
     user_message = request.json['message']
     conversation_history.append({"role": "user", "content": user_message})
 
@@ -133,6 +173,8 @@ def chat():
             assistant_message += content
             yield content
 
+        conversation_history.append({"role": "assistant", "content": assistant_message})
+
         log_event('assistant_message', {
             'message': assistant_message,
             'prompt': current_prompt,
@@ -143,17 +185,21 @@ def chat():
 
 @app.route('/suggestions', methods=['GET'])
 def get_suggestions():
+    global conversation_history
     suggestions = generate_suggestions(conversation_history)
     log_event('suggestions_generated', {
-        'suggestions': suggestions
+        'suggestions': suggestions,
+        'conversation_history': conversation_history
     })
+    logging.info(f"Generated suggestions: {suggestions}")
     return jsonify(suggestions)
 
 @app.route('/set_prompt', methods=['POST'])
 def set_prompt():
-    global current_prompt, current_mode
+    global current_prompt, current_mode, conversation_history
     current_prompt = request.json['prompt']
     current_mode = request.json.get('mode', '')
+    conversation_history = []  # Reset conversation history when changing prompts
     log_event('prompt_set', {
         'prompt': current_prompt,
         'mode': current_mode
