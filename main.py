@@ -34,8 +34,10 @@ def home():
 
 @app.route('/chat')
 def chat():
+    global current_prompt
     prompt = request.args.get('prompt', '')
     avatar = request.args.get('avatar', 'default-avatar.svg')
+    current_prompt = prompt
     log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar})
     return render_template('chat.html', prompt=prompt, avatar=avatar)
 
@@ -43,6 +45,27 @@ def chat():
 def chat_message():
     global conversation_history
     user_message = request.json['message']
+
+    if user_message == "START_CHAT":
+        # Generate an initial message from the AI assistant using the LLM
+        system_message = {"role": "system", "content": current_prompt}
+        initial_prompt = {"role": "user", "content": "Start a conversation based on your role. Introduce yourself and ask an engaging question to begin the interaction."}
+        initial_conversation = [system_message, initial_prompt]
+
+        initial_message = ""
+        for content in generate_response(initial_conversation, current_prompt):
+            initial_message += content
+
+        conversation_history.append({"role": "assistant", "content": initial_message})
+
+        log_event('chat_started', {
+            'initial_message': initial_message,
+            'prompt': current_prompt,
+            'mode': current_mode
+        })
+
+        return initial_message
+
     conversation_history.append({"role": "user", "content": user_message})
 
     log_event('user_message', {

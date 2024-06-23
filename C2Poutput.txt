@@ -8,7 +8,7 @@ this is a chat based website for young christians to explore their faith and hav
 
 
 ----- Instructions -----------
-when the chat starts, can the AI assistant intititate the conversation in a way that's relevant to the system prompt instead generically saying how can I help.  and there's no need for a automatic prompt from the user.  the first message in the chat should be from the AI assistant 
+suggest how this change might be made, once we agree it then we can ode it, when the chat starts, can the AI assistant intititate the conversation in a way that's relevant to the system prompt instead generically saying how can I help.  and there's no need for a automatic prompt from the user.  the first message in the chat should be from the AI assistant 
 
 ----------------
 ## templates/index.html
