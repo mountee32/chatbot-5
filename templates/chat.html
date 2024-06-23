@@ -10,6 +10,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <div id="avatar-selector" class="avatar-selector">
+        <div class="avatar-selector-header">
+            <h2>Select Your Avatar</h2>
+            <button id="close-avatar-selector">&times;</button>
+        </div>
+        <div class="avatar-options">
+            <img src="/static/assets/user_afro_male.svg" alt="Afro Male" data-avatar="user_afro_male.svg">
+            <img src="/static/assets/user_boy_male_young.svg" alt="Boy Young" data-avatar="user_boy_male_young.svg">
+            <img src="/static/assets/user_child_girl_kid.svg" alt="Child Girl" data-avatar="user_child_girl_kid.svg">
+        </div>
+    </div>
     <div class="container">
         <div class="chat-container" id="chat-container">
             <div class="chat-header">
@@ -18,6 +29,9 @@
                 </button>
                 <div class="chat-title">
                     <i class="{{ icon }}"></i> {{ title }}
+                </div>
+                <div id="current-avatar" class="current-avatar">
+                    <img src="/static/assets/{{ user_avatar }}" alt="Current Avatar">
                 </div>
                 <div class="header-icons">
                     <span><i class="fas fa-phone"></i></span>
@@ -48,7 +62,8 @@
             ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
         };
 
-        let currentAvatar = '{{ avatar }}';
+        let currentUserAvatar = '{{ user_avatar }}';
+        let currentAssistantAvatar = '{{ assistant_avatar }}';
         let currentPrompt = '{{ prompt }}';
 
         function replaceEmoticons(text) {
@@ -67,9 +82,9 @@
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'avatar';
             if (role === 'user') {
-                avatarDiv.innerHTML = '<img src="/static/assets/user-avatar.svg" alt="User">';
+                avatarDiv.innerHTML = `<img src="/static/assets/${currentUserAvatar}" alt="User">`;
             } else {
-                avatarDiv.innerHTML = `<img src="/static/assets/${currentAvatar}" alt="Assistant">`;
+                avatarDiv.innerHTML = `<img src="/static/assets/${currentAssistantAvatar}" alt="Assistant">`;
             }
 
             const contentDiv = document.createElement('div');
@@ -207,6 +222,42 @@
 
         // Call the initialization function when the page loads
         window.onload = initializeChat;
+
+        const currentAvatarElement = document.getElementById('current-avatar');
+        const avatarSelector = document.getElementById('avatar-selector');
+        const closeAvatarSelector = document.getElementById('close-avatar-selector');
+        const avatarOptions = document.querySelectorAll('.avatar-options img');
+
+        currentAvatarElement.addEventListener('click', () => {
+            avatarSelector.style.display = 'block';
+        });
+
+        closeAvatarSelector.addEventListener('click', () => {
+            avatarSelector.style.display = 'none';
+        });
+
+        avatarOptions.forEach(avatar => {
+            avatar.addEventListener('click', () => {
+                const newAvatar = avatar.getAttribute('data-avatar');
+                currentAvatarElement.querySelector('img').src = `/static/assets/${newAvatar}`;
+                avatarSelector.style.display = 'none';
+                
+                // Update the user's avatar for new messages
+                currentUserAvatar = newAvatar;
+                document.querySelectorAll('.user-message .avatar img').forEach(img => {
+                    img.src = `/static/assets/${newAvatar}`;
+                });
+                
+                // Send this information to the server to update the user's avatar
+                fetch('/update_avatar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ avatar: newAvatar }),
+                });
+            });
+        });
     </script>
 </body>
 </html>

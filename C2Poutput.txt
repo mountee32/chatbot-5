@@ -8,9 +8,136 @@ this is a chat based website for young christians to explore their faith and hav
 
 
 ----- Instructions -----------
-how can i ensure the menu items and submenu items are all the same size, explain how you would do it before we code it
+what code sets the intitial avatar in the header
 
 ----------------
+## templates/index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christian Children's Education Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="menu-container" id="menu-container">
+            <div class="menu-header">
+                <button id="menu-back-button" class="back-button" style="display: none;">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="menu-title" id="menu-title" style="color: white;">Main Menu</div> <!-- Updated line -->
+            </div>
+            <div class="menu-items-container" id="menu-items"></div>
+        </div>
+    </div>
+
+    <script>
+        const menuContainer = document.getElementById('menu-container');
+        const menuItems = document.getElementById('menu-items');
+        const menuTitle = document.getElementById('menu-title');
+        const menuBackButton = document.getElementById('menu-back-button');
+
+        let currentMenu = 'main';
+        let menuConfig;
+        let currentSubmenu;
+
+        function showMainMenu() {
+            menuContainer.style.display = 'flex';
+            currentMenu = 'main';
+            menuBackButton.style.display = 'none';
+            menuTitle.textContent = 'AI 4 Christians';  // Set the new title
+            menuTitle.style.color = 'white';  // Set text color to white
+            createMenu(menuConfig);
+            fadeInMenuItems();
+        }
+
+        function showSubMenu(submenu, title) {
+            menuContainer.style.display = 'flex';
+            currentMenu = 'sub';
+            menuBackButton.style.display = 'block';
+            menuTitle.textContent = title;
+            createSubmenu(submenu);
+            fadeInMenuItems();
+        }
+
+        function createMenu(menuConfig) {
+            menuItems.innerHTML = '';
+            menuConfig.menu.forEach(item => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
+                menuItems.appendChild(menuItem);
+
+                menuItem.addEventListener('click', () => {
+                    currentSubmenu = item.submenu;
+                    fadeOutMenuItems(menuItem);
+                    setTimeout(() => {
+                        showSubMenu(item.submenu, item.name);
+                    }, 300);
+                });
+            });
+        }
+
+        function createSubmenu(submenu) {
+            menuItems.innerHTML = '';
+            submenu.forEach(subItem => {
+                const submenuItem = document.createElement('div');
+                submenuItem.className = 'submenu-item';
+                submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
+                submenuItem.addEventListener('click', () => {
+                    fadeOutMenuItems(submenuItem);
+                    setTimeout(() => {
+                        window.location.href = `/chat?prompt=${encodeURIComponent(subItem.prompt)}&avatar=${encodeURIComponent(subItem.avatar)}&icon=${encodeURIComponent(subItem.icon)}&title=${encodeURIComponent(subItem.name)}`;
+                    }, 300);
+                });
+                menuItems.appendChild(submenuItem);
+            });
+        }
+
+        function fadeOutMenuItems(selectedItem) {
+            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
+            items.forEach(item => {
+                if (item !== selectedItem) {
+                    item.classList.add('fade-out');
+                }
+            });
+            setTimeout(() => {
+                selectedItem.classList.add('fade-out');
+            }, 150);
+        }
+
+        function fadeInMenuItems() {
+            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
+            items.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.remove('fade-out');
+                    item.classList.add('fade-in');
+                }, index * 50);
+            });
+        }
+
+        function initializeMenu(config) {
+            menuConfig = config;
+            showMainMenu();
+        }
+
+        menuBackButton.addEventListener('click', () => {
+            if (currentMenu === 'sub') {
+                showMainMenu();
+            }
+        });
+
+        // Initialize the menu
+        initializeMenu({{ menu_config | tojson | safe }});
+    </script>
+</body>
+</html>
+
 ## templates/chat.html
 
 <!DOCTYPE html>
@@ -25,6 +152,17 @@ how can i ensure the menu items and submenu items are all the same size, explain
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <div id="avatar-selector" class="avatar-selector">
+        <div class="avatar-selector-header">
+            <h2>Select Your Avatar</h2>
+            <button id="close-avatar-selector">&times;</button>
+        </div>
+        <div class="avatar-options">
+            <img src="/static/assets/user_afro_male.svg" alt="Afro Male" data-avatar="user_afro_male.svg">
+            <img src="/static/assets/user_boy_male_young.svg" alt="Boy Young" data-avatar="user_boy_male_young.svg">
+            <img src="/static/assets/user_child_girl_kid.svg" alt="Child Girl" data-avatar="user_child_girl_kid.svg">
+        </div>
+    </div>
     <div class="container">
         <div class="chat-container" id="chat-container">
             <div class="chat-header">
@@ -33,6 +171,9 @@ how can i ensure the menu items and submenu items are all the same size, explain
                 </button>
                 <div class="chat-title">
                     <i class="{{ icon }}"></i> {{ title }}
+                </div>
+                <div id="current-avatar" class="current-avatar">
+                    <img src="/static/assets/{{ user_avatar }}" alt="Current Avatar">
                 </div>
                 <div class="header-icons">
                     <span><i class="fas fa-phone"></i></span>
@@ -63,7 +204,8 @@ how can i ensure the menu items and submenu items are all the same size, explain
             ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
         };
 
-        let currentAvatar = '{{ avatar }}';
+        let currentUserAvatar = '{{ user_avatar }}';
+        let currentAssistantAvatar = '{{ assistant_avatar }}';
         let currentPrompt = '{{ prompt }}';
 
         function replaceEmoticons(text) {
@@ -82,9 +224,9 @@ how can i ensure the menu items and submenu items are all the same size, explain
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'avatar';
             if (role === 'user') {
-                avatarDiv.innerHTML = '<img src="/static/assets/user-avatar.svg" alt="User">';
+                avatarDiv.innerHTML = `<img src="/static/assets/${currentUserAvatar}" alt="User">`;
             } else {
-                avatarDiv.innerHTML = `<img src="/static/assets/${currentAvatar}" alt="Assistant">`;
+                avatarDiv.innerHTML = `<img src="/static/assets/${currentAssistantAvatar}" alt="Assistant">`;
             }
 
             const contentDiv = document.createElement('div');
@@ -222,137 +364,45 @@ how can i ensure the menu items and submenu items are all the same size, explain
 
         // Call the initialization function when the page loads
         window.onload = initializeChat;
-    </script>
-</body>
-</html>
 
-## templates/index.html
+        const currentAvatarElement = document.getElementById('current-avatar');
+        const avatarSelector = document.getElementById('avatar-selector');
+        const closeAvatarSelector = document.getElementById('close-avatar-selector');
+        const avatarOptions = document.querySelectorAll('.avatar-options img');
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christian Children's Education Chat</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-    <div class="container">
-        <div class="menu-container" id="menu-container">
-            <div class="menu-header">
-                <button id="menu-back-button" class="back-button" style="display: none;">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="menu-title" id="menu-title" style="color: white;">Main Menu</div> <!-- Updated line -->
-            </div>
-            <div class="menu-items-container" id="menu-items"></div>
-        </div>
-    </div>
-
-    <script>
-        const menuContainer = document.getElementById('menu-container');
-        const menuItems = document.getElementById('menu-items');
-        const menuTitle = document.getElementById('menu-title');
-        const menuBackButton = document.getElementById('menu-back-button');
-
-        let currentMenu = 'main';
-        let menuConfig;
-        let currentSubmenu;
-
-        function showMainMenu() {
-            menuContainer.style.display = 'flex';
-            currentMenu = 'main';
-            menuBackButton.style.display = 'none';
-            menuTitle.textContent = 'AI 4 Christians';  // Set the new title
-            menuTitle.style.color = 'white';  // Set text color to white
-            createMenu(menuConfig);
-            fadeInMenuItems();
-        }
-
-        function showSubMenu(submenu, title) {
-            menuContainer.style.display = 'flex';
-            currentMenu = 'sub';
-            menuBackButton.style.display = 'block';
-            menuTitle.textContent = title;
-            createSubmenu(submenu);
-            fadeInMenuItems();
-        }
-
-        function createMenu(menuConfig) {
-            menuItems.innerHTML = '';
-            menuConfig.menu.forEach(item => {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'menu-item';
-                menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
-                menuItems.appendChild(menuItem);
-
-                menuItem.addEventListener('click', () => {
-                    currentSubmenu = item.submenu;
-                    fadeOutMenuItems(menuItem);
-                    setTimeout(() => {
-                        showSubMenu(item.submenu, item.name);
-                    }, 300);
-                });
-            });
-        }
-
-        function createSubmenu(submenu) {
-            menuItems.innerHTML = '';
-            submenu.forEach(subItem => {
-                const submenuItem = document.createElement('div');
-                submenuItem.className = 'submenu-item';
-                submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
-                submenuItem.addEventListener('click', () => {
-                    fadeOutMenuItems(submenuItem);
-                    setTimeout(() => {
-                        window.location.href = `/chat?prompt=${encodeURIComponent(subItem.prompt)}&avatar=${encodeURIComponent(subItem.avatar)}&icon=${encodeURIComponent(subItem.icon)}&title=${encodeURIComponent(subItem.name)}`;
-                    }, 300);
-                });
-                menuItems.appendChild(submenuItem);
-            });
-        }
-
-        function fadeOutMenuItems(selectedItem) {
-            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
-            items.forEach(item => {
-                if (item !== selectedItem) {
-                    item.classList.add('fade-out');
-                }
-            });
-            setTimeout(() => {
-                selectedItem.classList.add('fade-out');
-            }, 150);
-        }
-
-        function fadeInMenuItems() {
-            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
-            items.forEach((item, index) => {
-                setTimeout(() => {
-                    item.classList.remove('fade-out');
-                    item.classList.add('fade-in');
-                }, index * 50);
-            });
-        }
-
-        function initializeMenu(config) {
-            menuConfig = config;
-            showMainMenu();
-        }
-
-        menuBackButton.addEventListener('click', () => {
-            if (currentMenu === 'sub') {
-                showMainMenu();
-            }
+        currentAvatarElement.addEventListener('click', () => {
+            avatarSelector.style.display = 'block';
         });
 
-        // Initialize the menu
-        initializeMenu({{ menu_config | tojson | safe }});
+        closeAvatarSelector.addEventListener('click', () => {
+            avatarSelector.style.display = 'none';
+        });
+
+        avatarOptions.forEach(avatar => {
+            avatar.addEventListener('click', () => {
+                const newAvatar = avatar.getAttribute('data-avatar');
+                currentAvatarElement.querySelector('img').src = `/static/assets/${newAvatar}`;
+                avatarSelector.style.display = 'none';
+                
+                // Update the user's avatar for new messages
+                currentUserAvatar = newAvatar;
+                document.querySelectorAll('.user-message .avatar img').forEach(img => {
+                    img.src = `/static/assets/${newAvatar}`;
+                });
+                
+                // Send this information to the server to update the user's avatar
+                fetch('/update_avatar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ avatar: newAvatar }),
+                });
+            });
+        });
     </script>
 </body>
 </html>
-
 ## static/styles.css
 
 :root {
@@ -361,7 +411,7 @@ how can i ensure the menu items and submenu items are all the same size, explain
 	--background-color: #ecf0f1;
 	--text-color: #000000;
 	--chat-bubble-user: #3498db;
-	--chat-bubble-assistant: #6bc44a; /* Softer green */
+	--chat-bubble-assistant: #6bc44a;
 	--button-background: #ffffff;
 	--button-text: var(--primary-color);
 	--button-border: var(--primary-color);
@@ -374,13 +424,13 @@ how can i ensure the menu items and submenu items are all the same size, explain
 }
 
 body, html {
-		height: 100%;
-		margin: 0;
-		padding: 0;
-		font-family: 'Roboto', sans-serif;
-		background: linear-gradient(135deg, #d2d7f9 0%, #87a1f8 50%, #3993f3 100%);
-		color: var(--text-color);
-		overflow: hidden;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: 'Roboto', sans-serif;
+	background: linear-gradient(135deg, #d2d7f9 0%, #87a1f8 50%, #3993f3 100%);
+	color: var(--text-color);
+	overflow: hidden;
 }
 
 .container {
@@ -445,15 +495,20 @@ body, html {
 	transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	font-size: 1.2em;
 	width: calc(50% - 20px);
 	max-width: 250px;
 	min-width: 200px;
+	height: 80px;
 	color: var(--text-color);
 	word-wrap: break-word;
 	white-space: normal;
+	text-align: center;
 	flex-grow: 1;
 	box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .menu-item:hover, .submenu-item:hover {
@@ -663,355 +718,95 @@ body, html {
 	pointer-events: auto;
 }
 
-## main.py
-
-import os
-import logging
-import json
-import time
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context
-
-from llm_chat import generate_response, generate_suggestions
-
-# Set up Python's logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='log.txt', filemode='a')
-
-app = Flask(__name__)
-
-conversation_history = []
-current_prompt = ""
-current_mode = ""
-
-def load_menu_config():
-    with open('menu_config.json', 'r') as f:
-        return json.load(f)
-
-menu_config = load_menu_config()
-
-def log_event(event_type, data):
-    log_entry = f"{time.time()} - {event_type} - {json.dumps(data)}\n"
-    with open('log.txt', 'a') as f:
-        f.write(log_entry)
-    logging.info(f"Event: {event_type}, Data: {json.dumps(data, indent=2)}")
-
-@app.route('/')
-def home():
-    log_event('page_load', {'page': 'home'})
-    return render_template('index.html', menu_config=menu_config)
-
-@app.route('/chat')
-def chat():
-    global current_prompt
-    prompt = request.args.get('prompt', '')
-    avatar = request.args.get('avatar', 'default-avatar.svg')
-    icon = request.args.get('icon', 'fas fa-comment')
-    title = request.args.get('title', 'Chat')  # Add this line
-    current_prompt = prompt
-    log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar, 'icon': icon, 'title': title})
-    return render_template('chat.html', prompt=prompt, avatar=avatar, icon=icon, title=title)  # Add title here
-
-@app.route('/chat', methods=['POST'])
-def chat_message():
-    global conversation_history
-    user_message = request.json['message']
-
-    if user_message == "START_CHAT":
-        # Generate an initial message from the AI assistant using the LLM
-        system_message = {"role": "system", "content": current_prompt}
-        initial_prompt = {"role": "user", "content": "Start a conversation based on your role. Introduce yourself and ask an engaging question to begin the interaction."}
-        initial_conversation = [system_message, initial_prompt]
-
-        initial_message = ""
-        for content in generate_response(initial_conversation, current_prompt):
-            initial_message += content
-
-        conversation_history.append({"role": "assistant", "content": initial_message})
-
-        log_event('chat_started', {
-            'initial_message': initial_message,
-            'prompt': current_prompt,
-            'mode': current_mode
-        })
-
-        return initial_message
-
-    conversation_history.append({"role": "user", "content": user_message})
-
-    log_event('user_message', {
-        'message': user_message,
-        'prompt': current_prompt,
-        'mode': current_mode
-    })
-
-    def generate():
-        assistant_message = ""
-        for content in generate_response(conversation_history, current_prompt):
-            assistant_message += content
-            yield content
-
-        conversation_history.append({"role": "assistant", "content": assistant_message})
-
-        log_event('assistant_message', {
-            'message': assistant_message,
-            'prompt': current_prompt,
-            'mode': current_mode
-        })
-
-    return Response(stream_with_context(generate()), content_type='text/plain')
-
-@app.route('/suggestions', methods=['GET'])
-def get_suggestions():
-    global conversation_history
-    suggestions_data = generate_suggestions(conversation_history, current_prompt)
-
-    # Check if suggestions_data is a dictionary with a 'suggestions' key
-    if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
-        suggestions = suggestions_data['suggestions']
-    else:
-        suggestions = suggestions_data  # Assume it's already the correct format
-
-    log_event('suggestions_generated', {
-        'suggestions': suggestions,
-        'conversation_history': conversation_history
-    })
-    logging.info(f"Generated suggestions: {json.dumps(suggestions, indent=2)}")
-    return jsonify(suggestions)
-
-@app.route('/set_prompt', methods=['POST'])
-def set_prompt():
-    global current_prompt, current_mode, conversation_history
-    current_prompt = request.json['prompt']
-    current_mode = request.json.get('mode', '')
-    conversation_history = []  # Reset conversation history when changing prompts
-    log_event('prompt_set', {
-        'prompt': current_prompt,
-        'mode': current_mode
-    })
-    return jsonify({"status": "success"})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
-## menu_config.json
-
-{
-"menu": [
-{
-"name": "Brainy Quizzes 🤔",
-"icon": "fas fa-brain",
-"submenu": [
-{
-"name": "Maths Magic ✨",
-"icon": "fas fa-magic",
-"prompt": "You are a friendly math tutor for children aged 6-12. Ask the child's preferred difficulty level. Present one age-appropriate math question at a time, total of 5 questions, using simple language and multiple-choice options when suitable. Provide gentle guidance, encouragement, and explanations. Adjust difficulty based on the child's performance.",
-"avatar": "man2.svg"
-},
-{
-"name": "Spelling Superstar 📝",
-"icon": "fas fa-spell-check",
-"prompt": "You are a spelling coach for children aged 6-12. Present one age-appropriate word at a time. total of 5 questions. use multiple choice format, presenting 3 wrong spellings and one right spelling.  Don't put the correct spelling in the question as that will give away the answer, so desribe the word being spelled in the quiz each time. Offer its meaning, use it in a sentence, . Provide encouragement and helpful tips for tricky spellings.",
-"avatar": "woman1.svg"
-},
-{
-"name": "General Knowledge Guru 🤓",
-"icon": "fas fa-university",
-"prompt": "You are a general knowledge expert for children aged 6-12. total of 5 questions.Present one interesting fact or quiz question at a time on various topics. Engage the child with follow-up questions and provide simple explanations to help them understand and remember the information.",
-"avatar": "man2.svg"
-},
-{
-"name": "Science Whiz 🔬",
-"icon": "fas fa-flask",
-"prompt": "You are a science educator for children aged 6-12. total of 5 questions.Share one science fact or simple experiment at a time. Explain scientific concepts using everyday examples and ask questions to encourage curiosity and hands-on learning.",
-"avatar": "man3.svg"
-},
-{
-"name": "Bible Brainiac ✝️",
-"icon": "fas fa-bible",
-"prompt": "You are a Bible expert for children aged 6-12. Present one engaging question or fact about the Bible at a time. total of 5 questions.Cover stories from both Testaments, explain key concepts, and help children understand how biblical lessons apply to their daily lives.",
-"avatar": "grandmother.svg"
-},
-{
-"name": "Defend the Faith ✝️",
-"icon": "fas fa-shield-alt",
-"prompt": "You are a Christian apologist for children aged 6-12. total of 5 questions.Present one common question about faith at a time and provide a simple, age-appropriate answer. Address topics like God's existence, Bible reliability, and Jesus' importance in an easy-to-grasp manner.",
-"avatar": "grandfather.svg"
-},
-{
-"name": "Language Explorer 🌍",
-"icon": "fas fa-language",
-"prompt": "You are a language tutor for children aged 6-12. total of 5 questions.Introduce one basic word or phrase from various languages at a time, focusing on greetings, numbers, colors, or common objects. Explain its meaning and ask the child to practice.",
-"avatar": "headphones_woman.svg"
+/* Avatar selector styles */
+.current-avatar {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	overflow: hidden;
+	cursor: pointer;
+	margin-left: 10px;
 }
-]
-},
-{
-"name": "Compare World Views Chats 🌎",
-"icon": "fas fa-globe",
-"submenu": [
-{
-"name": "Hindu and Christian",
-"icon": "fas fa-balance-scale",
-"prompt": "You are a neutral moderator presenting a dialogue between hindu and Christian viewpoints for children aged 6-12. Present one topic or question at a time, explaining both perspectives in simple terms. Encourage questions and emphasize mutual respect.",
-"avatars": ["male_business1.svg", "mature_man.svg"]
-},
-{
-"name": "Muslim and Christian",
-"icon": "fas fa-handshake",
-"prompt": "You are a neutral moderator presenting a dialogue between Muslim and Christian viewpoints for children aged 6-12. Discuss one aspect of faith at a time, highlighting similarities and differences. Use simple language and promote interfaith understanding.",
-"avatars": ["boy_young.svg", "girl_young.svg"]
-},
-{
-"name": "Christian v Athiest",
-"icon": "fas fa-users",
-"prompt": "You are a neutral moderator presenting a dialogue between William Lane Craig (WLC) and Richard Dawkins for children aged 6-12. Present one question at a time, offering both perspectives in simple terms. Ask for new topics. Start responses with 'WLC:' and 'Dawkins:' to differentiate views.",
-"avatars": ["man3.svg", "man2.svg"]
-},
-{
-"name": "Science and Faith",
-"icon": "fas fa-atom",
-"prompt": "You are a neutral moderator presenting a dialogue between scientific and faith-based perspectives for children aged 6-12. Discuss one topic at a time, explaining how science and faith can coexist. Use simple language and address common misconceptions.",
-"avatars": ["woman1.svg", "man2.svg"]
+
+.current-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
-]
-},
-{
-"name": "Chat with Tutors 📚",
-"icon": "fas fa-chalkboard-teacher",
-"submenu": [
-{
-"name": "Christian Mentor & Friend 📊",
-"icon": "fas fa-user-friends",
-"prompt": "You are a wise Christian mentor for children aged 6-12. Listen to their questions or concerns about life, faith, family, or school. Offer guidance based on Christian values, one piece of advice at a time. Be supportive and encouraging.",
-"avatar": "woman_young.svg"
-},
-{
-"name": "Maths Master 📝",
-"icon": "fas fa-calculator",
-"prompt": "You are a friendly math tutor for children aged 6-12. Help with one math concept or problem at a time. Explain ideas using simple terms and real-life examples. Offer practice problems and encourage questions.",
-"avatar": "man2.svg"
-},
-{
-"name": "Science Sensei 🔬",
-"icon": "fas fa-atom",
-"prompt": "You are a friendly science tutor for children aged 6-12. Explain one scientific concept at a time using simple terms. Share interesting facts and suggest easy experiments. Encourage curiosity and questions.",
-"avatar": "man2.svg"
-},
-{
-"name": "English Enthusiast 📚",
-"icon": "fas fa-book",
-"prompt": "You are a friendly English tutor for children aged 6-12. Focus on one language skill at a time (grammar, vocabulary, reading, or writing). Offer tips, suggest age-appropriate books, and use creative exercises to improve skills.",
-"avatar": "woman1.svg"
-},
-{
-"name": "History Hero",
-"icon": "fas fa-landmark",
-"prompt": "You are a history expert for children aged 6-12. Discuss one historical event or Bible-related historical context at a time. Use simple language and make connections between biblical events and world history. Encourage questions.",
-"avatar": "man3.svg"
-},
-{
-"name": "Apologist Ace",
-"icon": "fas fa-comments",
-"prompt": "You are an expert in Christian apologetics for children aged 6-12. Address one question or criticism about Christianity at a time. Use simple analogies and examples to explain complex concepts. Encourage further questions.",
-"avatar": "male_business1.svg"
-},
-{
-"name": "Bible Scholar",
-"icon": "fas fa-book-reader",
-"prompt": "You are a Bible expert for children aged 6-12. Focus on one Bible passage or concept at a time. Offer child-friendly insights into interpretation and application. Explain difficult passages and encourage questions about the context and meaning.",
-"avatar": "grandmother.svg"
-},
-{
-"name": "Devotional Coach",
-"icon": "fas fa-pray",
-"prompt": "You are a spiritual growth coach for children aged 6-12. Introduce one devotional practice, prayer method, or spiritual discipline at a time. Offer simple, age-appropriate exercises to help children develop their faith. Encourage questions and reflection.",
-"avatar": "grandfather.svg"
-},
-{
-"name": "Missions Mentor",
-"icon": "fas fa-globe-americas",
-"prompt": "You are a missions expert for children aged 6-12. Share one story about missionaries or explain one aspect of cross-cultural ministry at a time. Discuss the importance of spreading God's love and encourage questions about different cultures.",
-"avatar": "mature_man.svg"
-},
-{
-"name": "Art & Creativity Guide",
-"icon": "fas fa-palette",
-"prompt": "You are an art and creativity tutor for children aged 6-12. Introduce one art technique or creative project idea at a time. Incorporate biblical themes when appropriate. Encourage self-expression and questions about the creative process.",
-"avatar": "headphones_woman.svg"
+
+.avatar-selector {
+	display: none;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: white;
+	padding: 20px;
+	border-radius: 10px;
+	box-shadow: 0 0 10px rgba(0,0,0,0.1);
+	z-index: 1000;
 }
-]
-},
-{
-"name": "Inquire on a Bible Passage or Topic",
-"icon": "fas fa-search",
-"submenu": [
-{
-"name": "Topic",
-"icon": "fas fa-tags",
-"prompt": "You are a Bible topic expert for children aged 6-12. Discuss one biblical topic at a time. Use simple language and relevant examples. Encourage questions to help children understand and apply biblical teachings.",
-"avatar": "woman1.svg"
-},
-{
-"name": "Verses",
-"icon": "fas fa-quote-right",
-"prompt": "You are a Bible verse expert for children aged 6-12. Focus on one Bible verse at a time. Provide a child-friendly explanation and context. Help children understand the meaning and how to apply it in their daily lives. Encourage questions.",
-"avatar": "man2.svg"
-},
-{
-"name": "Bible Characters",
-"icon": "fas fa-user-friends",
-"prompt": "You are an expert on Bible characters for children aged 6-12. Introduce one character at a time, providing brief, interesting facts and a short story. Explain the lesson from this character in simple terms. Encourage questions and engagement.",
-"avatar": "woman_young.svg"
-},
-{
-"name": "Bible Timeline",
-"icon": "fas fa-clock",
-"prompt": "You are a Bible timeline expert for children aged 6-12. Introduce one major Bible event at a time, explaining its place in the overall timeline. Use simple explanations and encourage questions about how events connect.",
-"avatar": "man3.svg"
+
+.avatar-selector-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
 }
-]
-},
-{
-"name": "Adventure Games",
-"icon": "fas fa-gamepad",
-"submenu": [
-{
-"name": "The Lost City of Kindness",
-"icon": "fas fa-city",
-"prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where kindness is key. Present one choice or challenge at a time, teaching the importance of being kind to others. Encourage player decisions and questions.",
-"avatar": "boy_young.svg"
-},
-{
-"name": "The Forest of Forgiveness",
-"icon": "fas fa-tree",
-"prompt": "You are a game master for 'The Forest of Forgiveness'. Guide the player through an enchanted forest where forgiveness unlocks wonders. Present one scenario at a time that demonstrates the power of forgiveness. Allow player choices and encourage questions.",
-"avatar": "girl_young.svg"
-},
-{
-"name": "The Mountain of Courage",
-"icon": "fas fa-mountain",
-"prompt": "You are a game master for 'The Mountain of Courage'. Guide the player as they climb a mountain where bravery and trust in God help overcome obstacles. Present one challenge at a time that requires faith and courage. Encourage player decisions and reflection.",
-"avatar": "man3.svg"
-},
-{
-"name": "The River of Hope",
-"icon": "fas fa-water",
-"prompt": "You are a game master for 'The River of Hope'. Guide the player along a river where hope helps overcome challenges. Present one situation at a time that teaches the importance of maintaining hope. Allow player choices and encourage questions.",
-"avatar": "man2.svg"
-},
-{
-"name": "The Valley of Wisdom",
-"icon": "fas fa-seedling",
-"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a valley where wisdom uncovers treasures. Present one puzzle or dilemma at a time that requires wise decision-making. Encourage player choices and reflection.",
-"avatar": "woman1.svg"
-},
-{
-"name": "The Island of Faith",
-"icon": "fas fa-island-tropical",
-"prompt": "You are a game master for 'The Island of Faith'. Guide the player through an adventure where faith in God helps overcome seemingly impossible situations. Present one scenario at a time that demonstrates the power of faith. Encourage player decisions and questions.",
-"avatar": "male_business1.svg"
+
+.avatar-selector-header h2 {
+	margin: 0;
 }
-]
+
+.avatar-selector-header button {
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
 }
-]
+
+.avatar-options {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 10px;
+}
+
+.avatar-options img {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	cursor: pointer;
+	transition: transform 0.2s;
+}
+
+.avatar-options img:hover {
+	transform: scale(1.1);
+}
+
+/* Media query for responsive design */
+@media (max-width: 768px) {
+	.menu-item, .submenu-item {
+			width: calc(100% - 20px);
+			max-width: none;
+			height: 70px;
+	}
+
+	.menu-title {
+			font-size: 2em;
+	}
+
+	.chat-container {
+			margin: 10px;
+			padding: 10px;
+	}
+
+	.message-content {
+			max-width: 80%;
+	}
+
+	.avatar-options {
+			grid-template-columns: repeat(3, 1fr);
+	}
 }
 ## llm_chat.py
 
@@ -1108,18 +903,23 @@ def generate_suggestions(messages, current_prompt):
 		system_message = {
 				"role": "system",
 				"content": f"""You are a suggestion generator for a chatbot. The current context is:
-
+	
 				{current_prompt}
-
-				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. These suggestions should be direct responses to the last question or prompt from the assistant.
-
+	
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. These suggestions should be phrased as statements or questions that the user might say or ask, not as questions directed back at the user.
+	
+				Examples of good suggestions:
+				- "I'm not sure if I believe"
+				- "How can I grow my faith?"
+				- "What if I have doubts sometimes?"
+				- "Can you explain salvation more?"
+	
 				Provide the suggestions in JSON format according to the following schema:
-
+	
 				{json.dumps(schema, indent=2)}
-
-				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
-		}
-
+	
+				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field. Choose appropriate icons that match the content of each suggestion."""
+		}	
 		# Use the last two messages from the chat history
 		last_messages = messages[-2:] if len(messages) >= 2 else messages
 
@@ -1185,3 +985,362 @@ if __name__ == "__main__":
 		logger.info("Generating suggestions...")
 		suggestions = generate_suggestions(sample_messages, sample_prompt)
 		logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")
+## menu_config.json
+
+{
+"menu": [
+{
+"name": "Brainy Quizzes 🤔",
+"icon": "fas fa-brain",
+"submenu": [
+{
+"name": "Maths Magic ✨",
+"icon": "fas fa-magic",
+"prompt": "You are a friendly math tutor for children aged 6-12. Ask the child's preferred difficulty level. Present one age-appropriate math question at a time, total of 5 questions, using simple language and multiple-choice options when suitable. Provide gentle guidance, encouragement, and explanations. Adjust difficulty based on the child's performance.",
+"avatar": "man_orange.svg"
+},
+{
+"name": "Spelling Superstar 📝",
+"icon": "fas fa-spell-check",
+"prompt": "You are a spelling coach for children aged 6-12. Present one age-appropriate word at a time. total of 5 questions. use multiple choice format, presenting 3 wrong spellings and one right spelling.  Don't put the correct spelling in the question as that will give away the answer, so desribe the word being spelled in the quiz each time. Offer its meaning, use it in a sentence, . Provide encouragement and helpful tips for tricky spellings.",
+"avatar": "woman1.svg"
+},
+{
+"name": "General Knowledge Guru 🤓",
+"icon": "fas fa-university",
+"prompt": "You are a general knowledge expert for children aged 6-12. total of 5 questions.Present one interesting fact or quiz question at a time on various topics. Engage the child with follow-up questions and provide simple explanations to help them understand and remember the information.",
+"avatar": "male_mic.svg"
+},
+{
+"name": "Science Whiz 🔬",
+"icon": "fas fa-flask",
+"prompt": "You are a science educator for children aged 6-12. total of 5 questions.Share one science fact or simple experiment at a time. Explain scientific concepts using everyday examples and ask questions to encourage curiosity and hands-on learning.",
+"avatar": "man3.svg"
+},
+{
+"name": "Bible Brainiac ✝️",
+"icon": "fas fa-bible",
+"prompt": "You are a Bible expert for children aged 6-12. Present one engaging question or fact about the Bible at a time. total of 5 questions.Cover stories from both Testaments, explain key concepts, and help children understand how biblical lessons apply to their daily lives.",
+"avatar": "grandmothe.svg"
+},
+{
+"name": "Defend the Faith ✝️",
+"icon": "fas fa-shield-alt",
+"prompt": "You are a Christian apologist for children aged 6-12. total of 5 questions.Present one common question about faith at a time and provide a simple, age-appropriate answer. Address topics like God's existence, Bible reliability, and Jesus' importance in an easy-to-grasp manner.",
+"avatar": "grandfather.svg"
+},
+{
+"name": "Language Explorer 🌍",
+"icon": "fas fa-language",
+"prompt": "You are a language tutor for children aged 6-12. total of 5 questions.Introduce one basic word or phrase from various languages at a time, focusing on greetings, numbers, colors, or common objects. Explain its meaning and ask the child to practice.",
+"avatar": "headphones_woman.svg"
+}
+]
+},
+{
+"name": "Compare World Views Chats 🌎",
+"icon": "fas fa-globe",
+"submenu": [
+{
+"name": "Hindu and Christian",
+"icon": "fas fa-balance-scale",
+"prompt": "You are a neutral moderator presenting a dialogue between hindu and Christian viewpoints for children aged 6-12. Present one topic or question at a time, explaining both perspectives in simple terms. Encourage questions and emphasize mutual respect.",
+"avatars": ["male_business_r.svg", "mature_man.svg"]
+},
+{
+"name": "Muslim and Christian",
+"icon": "fas fa-handshake",
+"prompt": "You are a neutral moderator presenting a dialogue between Muslim and Christian viewpoints for children aged 6-12. Discuss one aspect of faith at a time, highlighting similarities and differences. Use simple language and promote interfaith understanding.",
+"avatars": ["boy_young.svg", "girl_young.svg"]
+},
+{
+"name": "Christian v Athiest",
+"icon": "fas fa-users",
+"prompt": "You are a neutral moderator presenting a dialogue between William Lane Craig (WLC) and Richard Dawkins for children aged 6-12. Present one question at a time, offering both perspectives in simple terms. Ask for new topics. Start responses with 'WLC:' and 'Dawkins:' to differentiate views.",
+"avatars": ["man_muslim.svg", "man2.svg"]
+},
+{
+"name": "Science and Faith",
+"icon": "fas fa-atom",
+"prompt": "You are a neutral moderator presenting a dialogue between scientific and faith-based perspectives for children aged 6-12. Discuss one topic at a time, explaining how science and faith can coexist. Use simple language and address common misconceptions.",
+"avatars": ["woman_young.svg", "young_male3.svg"]
+}
+]
+},
+{
+"name": "Chat with Tutors 📚",
+"icon": "fas fa-chalkboard-teacher",
+"submenu": [
+{
+"name": "Christian Mentor & Friend 📊",
+"icon": "fas fa-user-friends",
+"prompt": "You are a wise Christian mentor for children aged 6-12. Listen to their questions or concerns about life, faith, family, or school. Offer guidance based on Christian values, one piece of advice at a time. Be supportive and encouraging.",
+"avatar": "elderly_grandma.svg"
+},
+{
+"name": "Maths Master 📝",
+"icon": "fas fa-calculator",
+"prompt": "You are a friendly math tutor for children aged 6-12. Help with one math concept or problem at a time. Explain ideas using simple terms and real-life examples. Offer practice problems and encourage questions.",
+"avatar": "boy_male.svg"
+},
+{
+"name": "Science Sensei 🔬",
+"icon": "fas fa-atom",
+"prompt": "You are a friendly science tutor for children aged 6-12. Explain one scientific concept at a time using simple terms. Share interesting facts and suggest easy experiments. Encourage curiosity and questions.",
+"avatar": "business_man.svg"
+},
+{
+"name": "English Enthusiast 📚",
+"icon": "fas fa-book",
+"prompt": "You are a friendly English tutor for children aged 6-12. Focus on one language skill at a time (grammar, vocabulary, reading, or writing). Offer tips, suggest age-appropriate books, and use creative exercises to improve skills.",
+"avatar": "woman1.svg"
+},
+{
+"name": "History Hero",
+"icon": "fas fa-landmark",
+"prompt": "You are a history expert for children aged 6-12. Discuss one historical event or Bible-related historical context at a time. Use simple language and make connections between biblical events and world history. Encourage questions.",
+"avatar": "man3.svg"
+},
+{
+"name": "Apologist Ace",
+"icon": "fas fa-comments",
+"prompt": "You are an expert in Christian apologetics for children aged 6-12. Address one question or criticism about Christianity at a time. Use simple analogies and examples to explain complex concepts. Encourage further questions.",
+"avatar": "male_business_r.svg"
+},
+{
+"name": "Bible Scholar",
+"icon": "fas fa-book-reader",
+"prompt": "You are a Bible expert for children aged 6-12. Focus on one Bible passage or concept at a time. Offer child-friendly insights into interpretation and application. Explain difficult passages and encourage questions about the context and meaning.",
+"avatar": "grandmothe.svg"
+},
+{
+"name": "Devotional Coach",
+"icon": "fas fa-pray",
+"prompt": "You are a spiritual growth coach for children aged 6-12. Introduce one devotional practice, prayer method, or spiritual discipline at a time. Offer simple, age-appropriate exercises to help children develop their faith. Encourage questions and reflection.",
+"avatar": "grandfather.svg"
+},
+{
+"name": "Missions Mentor",
+"icon": "fas fa-globe-americas",
+"prompt": "You are a missions expert for children aged 6-12. Share one story about missionaries or explain one aspect of cross-cultural ministry at a time. Discuss the importance of spreading God's love and encourage questions about different cultures.",
+"avatar": "mature_man.svg"
+},
+{
+"name": "Art & Creativity Guide",
+"icon": "fas fa-palette",
+"prompt": "You are an art and creativity tutor for children aged 6-12. Introduce one art technique or creative project idea at a time. Incorporate biblical themes when appropriate. Encourage self-expression and questions about the creative process.",
+"avatar": "headphones_woman.svg"
+}
+]
+},
+{
+"name": "Inquire on a Bible Passage or Topic",
+"icon": "fas fa-search",
+"submenu": [
+{
+"name": "Topic",
+"icon": "fas fa-tags",
+"prompt": "You are a Bible topic expert for children aged 6-12. Discuss one biblical topic at a time. Use simple language and relevant examples. Encourage questions to help children understand and apply biblical teachings.",
+"avatar": "woman1.svg"
+},
+{
+"name": "Verses",
+"icon": "fas fa-quote-right",
+"prompt": "You are a Bible verse expert for children aged 6-12. Focus on one Bible verse at a time. Provide a child-friendly explanation and context. Help children understand the meaning and how to apply it in their daily lives. Encourage questions.",
+"avatar": "man2.svg"
+},
+{
+"name": "Bible Characters",
+"icon": "fas fa-user-friends",
+"prompt": "You are an expert on Bible characters for children aged 6-12. Introduce one character at a time, providing brief, interesting facts and a short story. Explain the lesson from this character in simple terms. Encourage questions and engagement.",
+"avatar": "woman_young.svg"
+},
+{
+"name": "Bible Timeline",
+"icon": "fas fa-clock",
+"prompt": "You are a Bible timeline expert for children aged 6-12. Introduce one major Bible event at a time, explaining its place in the overall timeline. Use simple explanations and encourage questions about how events connect.",
+"avatar": "man3.svg"
+}
+]
+},
+{
+"name": "Adventure Games",
+"icon": "fas fa-gamepad",
+"submenu": [
+{
+"name": "The Lost City of Kindness",
+"icon": "fas fa-city",
+"prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where kindness is key. Present one choice or challenge at a time, teaching the importance of being kind to others. Encourage player decisions and questions.",
+"avatar": "boy_young.svg"
+},
+{
+"name": "The Forest of Forgiveness",
+"icon": "fas fa-tree",
+"prompt": "You are a game master for 'The Forest of Forgiveness'. Guide the player through an enchanted forest where forgiveness unlocks wonders. Present one scenario at a time that demonstrates the power of forgiveness. Allow player choices and encourage questions.",
+"avatar": "girl_young.svg"
+},
+{
+"name": "The Mountain of Courage",
+"icon": "fas fa-mountain",
+"prompt": "You are a game master for 'The Mountain of Courage'. Guide the player as they climb a mountain where bravery and trust in God help overcome obstacles. Present one challenge at a time that requires faith and courage. Encourage player decisions and reflection.",
+"avatar": "man3.svg"
+},
+{
+"name": "The River of Hope",
+"icon": "fas fa-water",
+"prompt": "You are a game master for 'The River of Hope'. Guide the player along a river where hope helps overcome challenges. Present one situation at a time that teaches the importance of maintaining hope. Allow player choices and encourage questions.",
+"avatar": "man2.svg"
+},
+{
+"name": "The Valley of Wisdom",
+"icon": "fas fa-seedling",
+"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a valley where wisdom uncovers treasures. Present one puzzle or dilemma at a time that requires wise decision-making. Encourage player choices and reflection.",
+"avatar": "woman1.svg"
+},
+{
+"name": "The Island of Faith",
+"icon": "fas fa-island-tropical",
+"prompt": "You are a game master for 'The Island of Faith'. Guide the player through an adventure where faith in God helps overcome seemingly impossible situations. Present one scenario at a time that demonstrates the power of faith. Encourage player decisions and questions.",
+"avatar": "male_business_r.svg"
+}
+]
+}
+]
+}
+## main.py
+
+import os
+import logging
+import json
+import time
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context
+
+from llm_chat import generate_response, generate_suggestions
+
+# Set up Python's logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='log.txt', filemode='a')
+
+app = Flask(__name__)
+
+conversation_history = []
+current_prompt = ""
+current_mode = ""
+
+def load_menu_config():
+    with open('menu_config.json', 'r') as f:
+        return json.load(f)
+
+menu_config = load_menu_config()
+
+def log_event(event_type, data):
+    log_entry = f"{time.time()} - {event_type} - {json.dumps(data)}\n"
+    with open('log.txt', 'a') as f:
+        f.write(log_entry)
+    logging.info(f"Event: {event_type}, Data: {json.dumps(data, indent=2)}")
+
+@app.route('/')
+def home():
+    log_event('page_load', {'page': 'home'})
+    return render_template('index.html', menu_config=menu_config)
+
+@app.route('/chat')
+def chat():
+    global current_prompt
+    prompt = request.args.get('prompt', '')
+    user_avatar = request.args.get('avatar', 'user_boy_male_young.svg')  
+    assistant_avatar = request.args.get('avatar', 'default-avatar.svg')  
+    icon = request.args.get('icon', 'fas fa-comment')
+    title = request.args.get('title', 'Chat')
+    current_prompt = prompt
+    log_event('chat_page_load', {'prompt': prompt, 'user_avatar': user_avatar, 'assistant_avatar': assistant_avatar, 'icon': icon, 'title': title})
+    return render_template('chat.html', prompt=prompt, user_avatar=user_avatar, assistant_avatar=assistant_avatar, icon=icon, title=title)
+
+@app.route('/chat', methods=['POST'])
+def chat_message():
+    global conversation_history
+    user_message = request.json['message']
+
+    if user_message == "START_CHAT":
+        # Generate an initial message from the AI assistant using the LLM
+        system_message = {"role": "system", "content": current_prompt}
+        initial_prompt = {"role": "user", "content": "Start a conversation based on your role. Introduce yourself and ask an engaging question to begin the interaction."}
+        initial_conversation = [system_message, initial_prompt]
+
+        initial_message = ""
+        for content in generate_response(initial_conversation, current_prompt):
+            initial_message += content
+
+        conversation_history.append({"role": "assistant", "content": initial_message})
+
+        log_event('chat_started', {
+            'initial_message': initial_message,
+            'prompt': current_prompt,
+            'mode': current_mode
+        })
+
+        return initial_message
+
+    conversation_history.append({"role": "user", "content": user_message})
+
+    log_event('user_message', {
+        'message': user_message,
+        'prompt': current_prompt,
+        'mode': current_mode
+    })
+
+    def generate():
+        assistant_message = ""
+        for content in generate_response(conversation_history, current_prompt):
+            assistant_message += content
+            yield content
+
+        conversation_history.append({"role": "assistant", "content": assistant_message})
+
+        log_event('assistant_message', {
+            'message': assistant_message,
+            'prompt': current_prompt,
+            'mode': current_mode
+        })
+
+    return Response(stream_with_context(generate()), content_type='text/plain')
+
+@app.route('/suggestions', methods=['GET'])
+def get_suggestions():
+    global conversation_history
+    suggestions_data = generate_suggestions(conversation_history, current_prompt)
+
+    # Check if suggestions_data is a dictionary with a 'suggestions' key
+    if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+        suggestions = suggestions_data['suggestions']
+    else:
+        suggestions = suggestions_data  # Assume it's already the correct format
+
+    log_event('suggestions_generated', {
+        'suggestions': suggestions,
+        'conversation_history': conversation_history
+    })
+    logging.info(f"Generated suggestions: {json.dumps(suggestions, indent=2)}")
+    return jsonify(suggestions)
+
+@app.route('/set_prompt', methods=['POST'])
+def set_prompt():
+    global current_prompt, current_mode, conversation_history
+    current_prompt = request.json['prompt']
+    current_mode = request.json.get('mode', '')
+    conversation_history = []  # Reset conversation history when changing prompts
+    log_event('prompt_set', {
+        'prompt': current_prompt,
+        'mode': current_mode
+    })
+    return jsonify({"status": "success"})
+
+@app.route('/update_avatar', methods=['POST'])
+def update_avatar():
+    new_avatar = request.json['avatar']
+    # Here you would typically update the user's avatar in your database
+    # For this example, we'll just return a success message
+    log_event('avatar_updated', {'new_avatar': new_avatar})
+    return jsonify({"status": "success", "message": "Avatar updated successfully"})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)

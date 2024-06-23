@@ -36,12 +36,13 @@ def home():
 def chat():
     global current_prompt
     prompt = request.args.get('prompt', '')
-    avatar = request.args.get('avatar', 'default-avatar.svg')
+    user_avatar = request.args.get('avatar', 'user_boy_male_young.svg')  
+    assistant_avatar = request.args.get('avatar', 'default-avatar.svg')  
     icon = request.args.get('icon', 'fas fa-comment')
-    title = request.args.get('title', 'Chat')  # Add this line
+    title = request.args.get('title', 'Chat')
     current_prompt = prompt
-    log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar, 'icon': icon, 'title': title})
-    return render_template('chat.html', prompt=prompt, avatar=avatar, icon=icon, title=title)  # Add title here
+    log_event('chat_page_load', {'prompt': prompt, 'user_avatar': user_avatar, 'assistant_avatar': assistant_avatar, 'icon': icon, 'title': title})
+    return render_template('chat.html', prompt=prompt, user_avatar=user_avatar, assistant_avatar=assistant_avatar, icon=icon, title=title)
 
 @app.route('/chat', methods=['POST'])
 def chat_message():
@@ -121,6 +122,14 @@ def set_prompt():
         'mode': current_mode
     })
     return jsonify({"status": "success"})
+
+@app.route('/update_avatar', methods=['POST'])
+def update_avatar():
+    new_avatar = request.json['avatar']
+    # Here you would typically update the user's avatar in your database
+    # For this example, we'll just return a success message
+    log_event('avatar_updated', {'new_avatar': new_avatar})
+    return jsonify({"status": "success", "message": "Avatar updated successfully"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
