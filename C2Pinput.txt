@@ -10,5 +10,4 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 -----
-how do we get the quiz to start rather than just message "Welcome to Maths Magic ✨! How can I help you?" which does not explain what to do
-
+replace the chat_log.json with log.txt which is step by step logging from every function and step so we can see exactly what is happening within the app, this should be in clear text format and include the time and value of key parameters beibg passed, this should provide detailed visibility of all key applicaiton activity for diagnostics and will be turned off before we go live

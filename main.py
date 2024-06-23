@@ -2,19 +2,13 @@ import os
 import logging
 import json
 import time
-import re
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
-import requests
+from llm_chat import generate_response, generate_suggestions
 
 # Set up Python's logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='log.txt', filemode='a')
 
 app = Flask(__name__)
-
-OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4o"
-LOG_FILE = 'chat_log.json'
 
 conversation_history = []
 current_prompt = ""
@@ -27,132 +21,14 @@ def load_menu_config():
 menu_config = load_menu_config()
 
 def log_event(event_type, data):
-    log_entry = {
-        'timestamp': time.time(),
-        'event_type': event_type,
-        'data': data
-    }
-
-    # Log to JSON file
-    try:
-        with open(LOG_FILE, 'r+') as f:
-            try:
-                log_data = json.load(f)
-            except json.JSONDecodeError:
-                log_data = []
-
-            log_data.append(log_entry)
-
-            f.seek(0)
-            json.dump(log_data, f, indent=2)
-            f.truncate()
-    except FileNotFoundError:
-        with open(LOG_FILE, 'w') as f:
-            json.dump([log_entry], f, indent=2)
-
-    # Also log using Python's logging
+    log_entry = f"{time.time()} - {event_type} - {json.dumps(data)}\n"
+    with open('log.txt', 'a') as f:
+        f.write(log_entry)
     logging.info(f"Event: {event_type}, Data: {json.dumps(data, indent=2)}")
-
-def generate_response(messages):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://your-app-url.com",
-        "X-Title": "OpenRouter Chatbot",
-        "Content-Type": "application/json"
-    }
-
-    system_message = {
-        "role": "system",
-        "content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
-    }
-
-    messages = [system_message] + messages
-
-    data = {
-        "model": MODEL,
-        "messages": messages,
-        "stream": True
-    }
-
-    response = requests.post(API_URL, headers=headers, json=data, stream=True)
-
-    for line in response.iter_lines():
-        if line:
-            line = line.decode('utf-8')
-            if line.startswith('data: '):
-                line = line[6:]
-                if line.strip() == '[DONE]':
-                    break
-                try:
-                    json_object = json.loads(line)
-                    content = json_object['choices'][0]['delta'].get('content', '')
-                    if content:
-                        yield content
-                except json.JSONDecodeError:
-                    continue
-
-def generate_suggestions(messages):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://your-app-url.com",
-        "X-Title": "OpenRouter Chatbot",
-        "Content-Type": "application/json"
-    }
-
-    system_message = {
-        "role": "system",
-        "content": f"You are a suggested follow on prompt generator for a christian chatbot, therefore generate 4 very short maximum 10 words, diverse, and relevant suggestions for the user's next desired message based on the current context and conversation history. The suggestions should be appropriate for children and related to the current topic. You can use Markdown syntax and emoticons."
-    }
-
-    # Include the current prompt in the messages
-    prompt_message = {"role": "system", "content": current_prompt}
-    full_messages = [system_message, prompt_message] + messages
-
-    data = {
-        "model": MODEL,
-        "messages": full_messages,
-        "max_tokens": 150
-    }
-
-    log_event('suggestion_request', {'data': data})
-    logging.debug(f"Sending request to API with data: {json.dumps(data, indent=2)}")
-
-    try:
-        response = requests.post(API_URL, headers=headers, json=data)
-        response.raise_for_status()
-
-        log_event('suggestion_response', {'status_code': response.status_code, 'content': response.text})
-        logging.debug(f"Received response from API: {response.status_code}")
-        logging.debug(f"Response content: {response.text}")
-
-        response_json = response.json()
-        suggestions = response_json['choices'][0]['message']['content'].split('\n')
-
-        log_event('raw_suggestions', {'suggestions': suggestions})
-        logging.debug(f"Raw suggestions: {suggestions}")
-
-        # Remove numbering and any leading/trailing whitespace
-        cleaned_suggestions = [re.sub(r'^\d+\.\s*', '', s.strip()) for s in suggestions if s.strip()]
-
-        log_event('cleaned_suggestions', {'suggestions': cleaned_suggestions})
-        logging.debug(f"Cleaned suggestions: {cleaned_suggestions}")
-
-        return cleaned_suggestions[:4]
-
-    except requests.RequestException as e:
-        error_msg = f"Error making request to API: {str(e)}"
-        log_event('suggestion_error', {'error': error_msg})
-        logging.error(error_msg)
-        return []
-
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        error_msg = f"Error parsing API response: {str(e)}"
-        log_event('suggestion_error', {'error': error_msg})
-        logging.error(error_msg)
-        return []
 
 @app.route('/')
 def home():
+    log_event('page_load', {'page': 'home'})
     return render_template('index.html', menu_config=menu_config)
 
 @app.route('/chat', methods=['POST'])
@@ -169,7 +45,7 @@ def chat():
 
     def generate():
         assistant_message = ""
-        for content in generate_response(conversation_history):
+        for content in generate_response(conversation_history, current_prompt):
             assistant_message += content
             yield content
 
@@ -186,12 +62,12 @@ def chat():
 @app.route('/suggestions', methods=['GET'])
 def get_suggestions():
     global conversation_history
-    suggestions = generate_suggestions(conversation_history)
+    suggestions = generate_suggestions(conversation_history, current_prompt)
     log_event('suggestions_generated', {
         'suggestions': suggestions,
         'conversation_history': conversation_history
     })
-    logging.info(f"Generated suggestions: {suggestions}")
+    logging.info(f"Generated suggestions: {json.dumps(suggestions, indent=2)}")
     return jsonify(suggestions)
 
 @app.route('/set_prompt', methods=['POST'])

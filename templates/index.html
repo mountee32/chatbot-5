@@ -93,10 +93,10 @@
 
         function createSuggestionButton(suggestion) {
             const button = document.createElement('button');
-            button.textContent = suggestion;
             button.className = 'suggestion-button';
+            button.innerHTML = `<i class="${suggestion.icon}"></i> ${suggestion.text}`;
             button.addEventListener('click', () => {
-                userInput.value = suggestion;
+                userInput.value = suggestion.text;
                 sendMessage();
                 removeSuggestions();
             });

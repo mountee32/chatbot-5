@@ -10,10 +10,7 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 -----
-how do we get the chat interactions to start uatomatically with the LLM starting automatically e.g. quiz to start rather than just message "Welcome to Maths Magic ✨! How can I help you?" which does not explain what to do
-
-
-
+replace the chat_log.json with log.txt which is step by step logging from every function and step so we can see exactly what is happening within the app, this should be in clear text format and include the time and value of key parameters beibg passed, this should provide detailed visibility of all key applicaiton activity for diagnostics and will be turned off before we go live
 
 ## templates/index.html
 
@@ -112,10 +109,10 @@ how do we get the chat interactions to start uatomatically with the LLM starting
 
         function createSuggestionButton(suggestion) {
             const button = document.createElement('button');
-            button.textContent = suggestion;
             button.className = 'suggestion-button';
+            button.innerHTML = `<i class="${suggestion.icon}"></i> ${suggestion.text}`;
             button.addEventListener('click', () => {
-                userInput.value = suggestion;
+                userInput.value = suggestion.text;
                 sendMessage();
                 removeSuggestions();
             });
@@ -137,10 +134,10 @@ how do we get the chat interactions to start uatomatically with the LLM starting
                 });
         }
 
-        function sendMessage() {
-            const message = userInput.value.trim();
-            if (message) {
-                addMessage('user', message);
+        function sendMessage(message = null) {
+            const userMessage = message || userInput.value.trim();
+            if (userMessage) {
+                addMessage('user', userMessage);
                 userInput.value = '';
                 removeSuggestions();
 
@@ -149,7 +146,7 @@ how do we get the chat interactions to start uatomatically with the LLM starting
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message: message }),
+                    body: JSON.stringify({ message: userMessage }),
                 })
                 .then(response => {
                     const reader = response.body.getReader();
@@ -235,7 +232,7 @@ how do we get the chat interactions to start uatomatically with the LLM starting
                     .then(() => {
                         showChat();
                         resetChat();
-                        addMessage('assistant', `Welcome to ${subItem.name}! How can I help you?`);
+                        sendMessage("Hi, I'm ready to start!");
                     });
                 });
                 menuItems.appendChild(submenuItem);
@@ -252,7 +249,7 @@ how do we get the chat interactions to start uatomatically with the LLM starting
             showMainMenu();
         }
 
-        sendButton.addEventListener('click', sendMessage);
+        sendButton.addEventListener('click', () => sendMessage());
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 sendMessage();
@@ -276,439 +273,6 @@ how do we get the chat interactions to start uatomatically with the LLM starting
     </script>
 </body>
 </html>
-## chat_log.json
-
-[
-  {
-    "timestamp": 1719000866.4234176,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a friendly math tutor for children. Present fun and engaging math problems suitable for young learners."
-    }
-  },
-  {
-    "timestamp": 1719000872.786137,
-    "event_type": "user_message",
-    "data": {
-      "message": "let's play",
-      "prompt": "You are a friendly math tutor for children. Present fun and engaging math problems suitable for young learners."
-    }
-  },
-  {
-    "timestamp": 1719000884.3056722,
-    "event_type": "assistant_message",
-    "data": {
-      "message": "That's great! Let's start with some fun math problems!\n\n1. Counting Challenge: Alice has 10 apples. She eats 2 for lunch and gives 3 to her friend. How many apples does Alice have left?\n\n2. Lego Fun: Jack has 7 red Lego blocks and 6 blue Lego blocks. How many Lego blocks does he have in total?\n\n3. Butterfly Math: In the park, you see 8 yellow butterflies and 5 blue butterflies. How many butterflies did you see all together?\n\n4. Doggy Treats: Your dog has 10 treats. You give him 2 in the morning and 3 in the evening. How many treats are left?\n\n5. Bead Bracelet: Your mom has 10 orange beads, 5 green beads and 4 purple beads. She wants to make a bracelet. How many beads does she have?\n\nAre you ready to solve these problems? Let's use our math powers!",
-      "prompt": "You are a friendly math tutor for children. Present fun and engaging math problems suitable for young learners."
-    }
-  },
-  {
-    "timestamp": 1719000888.0619633,
-    "event_type": "suggestions_generated",
-    "data": {
-      "suggestions": [
-        "\"Can we play a Bible story guessing game? \ud83d\ude04\"",
-        "\"Let's play a game about Christian symbols. \u271d\ufe0f\"",
-        "\"How about playing a memory verse challenge? \ud83d\udcd6\"",
-        "\"Want to play 'Name the Disciple'? \ud83d\udd4a\ufe0f\""
-      ]
-    }
-  },
-  {
-    "timestamp": 1719001189.4946983,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-    }
-  },
-  {
-    "timestamp": 1719001273.6251266,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a friendly science tutor for children. Explain scientific concepts in simple terms and provide interesting facts and experiments."
-    }
-  },
-  {
-    "timestamp": 1719001278.3913443,
-    "event_type": "user_message",
-    "data": {
-      "message": "what is 2+2",
-      "prompt": "You are a friendly science tutor for children. Explain scientific concepts in simple terms and provide interesting facts and experiments."
-    }
-  },
-  {
-    "timestamp": 1719001287.4824016,
-    "event_type": "assistant_message",
-    "data": {
-      "message": "2+2 is a basic addition problem in mathematics. The result is 4. This is considered one of the simplest mathematical problems as it introduces the concept of addition. Addition is simply putting two quantities together to get a larger quantity. \n\nInteresting Fact: Did you know that even ancient civilizations, such as the Egyptians, Romans, and Mayans, used addition in building their stunning architectural works, in trading goods, and even in keeping time? They all had their unique mathematical systems, and guess what, addition was a part of them!\n\nFun Experiment: You can easily demonstrate addition with some candies, buttons, or any other small objects you have around. For 2+2, place two candies on the table. Then, add two more. Count all the candies. You'll find you now have four candies on the table! You just did the addition problem 2+2!",
-      "prompt": "You are a friendly science tutor for children. Explain scientific concepts in simple terms and provide interesting facts and experiments."
-    }
-  },
-  {
-    "timestamp": 1719001287.4836042,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
-    }
-  },
-  {
-    "timestamp": 1719001287.4845653,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
-    }
-  },
-  {
-    "timestamp": 1719001287.5996964,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a wise Christian mentor and friend for children. Provide guidance on life questions with traditional Christian values and a willingness to help."
-    }
-  },
-  {
-    "timestamp": 1719001291.1614583,
-    "event_type": "suggestions_generated",
-    "data": {
-      "suggestions": [
-        "\"Can you teach me more maths?\" \ud83d\ude0a",
-        "\"What are other basic math equations?\"",
-        "\"What is 3+3?\" \ud83e\udd14",
-        "\"How can I practice math with fun?\" \ud83c\udfb2"
-      ]
-    }
-  },
-  {
-    "timestamp": 1719001356.106044,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
-    }
-  },
-  {
-    "timestamp": 1719001358.908733,
-    "event_type": "user_message",
-    "data": {
-      "message": "2+2",
-      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
-    }
-  },
-  {
-    "timestamp": 1719001366.8604286,
-    "event_type": "assistant_message",
-    "data": {
-      "message": "Great! We're talking about one of the basic operations of mathematics, which is addition.\n\nSo, when you see \"2+2\", it's like saying you have two apples, and you found two more apples. So, let's count them all together. You start with your first two apples, then add one more (that's a total of three apples) and then add another one. Now, you should have four apples!\n\nSo, 2 (the first two apples) plus 2 (the apples you found) equals 4 apples in total. So 2+2=4! That's how addition works.\n\nLet's practice: if you had 2 cookies and I gave you 2 more cookies, how many cookies would you have in total?\n",
-      "prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
-    }
-  },
-  {
-    "timestamp": 1719001369.2720995,
-    "event_type": "suggestions_generated",
-    "data": {
-      "suggestions": [
-        "\"Tell me about Creation!\"",
-        "\"Who was Moses?\"",
-        "\"What is Good Friday?\"",
-        "\"How do we pray?\""
-      ]
-    }
-  },
-  {
-    "timestamp": 1719001369.2737045,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a wise Christian mentor and friend for children. Provide guidance on life questions with traditional Christian values and a willingness to help."
-    }
-  },
-  {
-    "timestamp": 1719002380.8927112,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where they explore a mysterious ancient city. The city is filled with puzzles and challenges that can only be solved through acts of kindness. Start by describing the entrance to the city and present the player with their first choice or challenge."
-    }
-  },
-  {
-    "timestamp": 1719002388.959887,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where they explore a mysterious ancient city. The city is filled with puzzles and challenges that can only be solved through acts of kindness. Start by describing the entrance to the city and present the player with their first choice or challenge."
-    }
-  },
-  {
-    "timestamp": 1719011690.402052,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-    }
-  },
-  {
-    "timestamp": 1719011693.654308,
-    "event_type": "user_message",
-    "data": {
-      "message": "HI",
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-    }
-  },
-  {
-    "timestamp": 1719011695.746231,
-    "event_type": "assistant_message",
-    "data": {
-      "message": "Hello there! How can I help you today? Is there a particular topic related to atheism or Christianity that you'd like to discuss?",
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-    }
-  },
-  {
-    "timestamp": 1719011698.5496476,
-    "event_type": "suggestions_generated",
-    "data": {
-      "suggestions": [
-        "Here are 4 short, child-friendly suggestions for the next message:",
-        "\"Tell me about Jesus \ud83d\ude0a\"",
-        "\"What's your favorite Bible story? \ud83d\udcd6\"",
-        "\"How can I be kind to others today? \ud83e\udd17\""
-      ]
-    }
-  },
-  {
-    "timestamp": 1719011701.263484,
-    "event_type": "user_message",
-    "data": {
-      "message": "\"Tell me about Jesus \ud83d\ude0a\"",
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-    }
-  },
-  {
-    "timestamp": 1719011705.4391475,
-    "event_type": "assistant_message",
-    "data": {
-      "message": "Hi there! I'd be happy to explain about Jesus in a way that's suitable for children to understand. I'll present both Christian and non-religious perspectives respectfully:\n\nFrom a Christian viewpoint:\nChristians believe Jesus was the son of God who came to Earth as a human to teach people about love, forgiveness, and how to live good lives. They see Jesus as their savior and a very important religious figure.\n\nFrom a non-religious viewpoint:\nPeople who aren't Christian may see Jesus as an important historical figure and teacher who lived long ago and had ideas that influenced many people around the world.\n\nBoth perspectives agree that:\n- Jesus lived about 2000 years ago in a place now called Israel\n- He taught people to be kind to each other\n- His ideas have had a big impact on many people throughout history\n\nDo you have any other questions about Jesus? I'm happy to explain more from different perspectives.",
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-    }
-  },
-  {
-    "timestamp": 1719011708.0548646,
-    "event_type": "suggestions_generated",
-    "data": {
-      "suggestions": [
-        "Here are 4 suggested follow-up prompts:",
-        "\ud83d\ude4f What miracles did Jesus perform?",
-        "\ud83d\udcd6 Share a favorite Bible story about Jesus",
-        "\ud83d\udc96 How can I follow Jesus' teachings today?"
-      ]
-    }
-  },
-  {
-    "timestamp": 1719012036.8362317,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.",
-      "mode": ""
-    }
-  },
-  {
-    "timestamp": 1719012046.7049568,
-    "event_type": "user_message",
-    "data": {
-      "message": "what is the meaning of life",
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.",
-      "mode": ""
-    }
-  },
-  {
-    "timestamp": 1719012050.5256054,
-    "event_type": "assistant_message",
-    "data": {
-      "message": "Here are simplified responses from both perspectives that would be suitable for children:\n\nWLC: The meaning of life is to know, love, and serve God. God created us for a purpose, and that purpose is to have a relationship with Him and to do good things in the world. By following God's teachings and trying to be the best person we can be, we fulfill the meaning of life.\n\nDawkins: There isn't one single meaning of life that applies to everyone. Each person can decide what gives their life meaning. For some, it might be helping others, for others it could be learning new things, or creating art. The important thing is to find what makes you happy and what you think is important, and to enjoy the time we have on Earth.",
-      "prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.",
-      "mode": ""
-    }
-  },
-  {
-    "timestamp": 1719012052.5751483,
-    "event_type": "suggestions_generated",
-    "data": {
-      "suggestions": [
-        "Here are 4 brief, relevant follow-up suggestions:",
-        "How does faith contribute to life's meaning? \ud83d\ude4f",
-        "What does the Bible say about purpose?",
-        "Can you explain God's plan for us?"
-      ]
-    }
-  },
-  {
-    "timestamp": 1719072653.8518572,
-    "event_type": "prompt_set",
-    "data": {
-      "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
-      "mode": ""
-    }
-  }
-]
-## main.py
-
-import os
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context
-import requests
-import json
-import time
-import re
-
-app = Flask(__name__)
-
-OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "anthropic/claude-3.5-sonnet"
-LOG_FILE = 'chat_log.json'
-
-conversation_history = []
-current_prompt = ""
-current_mode = ""
-
-def load_menu_config():
-    with open('menu_config.json', 'r') as f:
-        return json.load(f)
-
-menu_config = load_menu_config()
-
-def log_event(event_type, data):
-    log_entry = {
-        'timestamp': time.time(),
-        'event_type': event_type,
-        'data': data
-    }
-
-    try:
-        with open(LOG_FILE, 'r+') as f:
-            try:
-                log_data = json.load(f)
-            except json.JSONDecodeError:
-                log_data = []
-
-            log_data.append(log_entry)
-
-            f.seek(0)
-            json.dump(log_data, f, indent=2)
-            f.truncate()
-    except FileNotFoundError:
-        with open(LOG_FILE, 'w') as f:
-            json.dump([log_entry], f, indent=2)
-
-def generate_response(messages):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://your-app-url.com",
-        "X-Title": "OpenRouter Chatbot",
-        "Content-Type": "application/json"
-    }
-
-    system_message = {
-        "role": "system",
-        "content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
-    }
-
-    messages = [system_message] + messages
-
-    data = {
-        "model": MODEL,
-        "messages": messages,
-        "stream": True
-    }
-
-    response = requests.post(API_URL, headers=headers, json=data, stream=True)
-
-    for line in response.iter_lines():
-        if line:
-            line = line.decode('utf-8')
-            if line.startswith('data: '):
-                line = line[6:]
-                if line.strip() == '[DONE]':
-                    break
-                try:
-                    json_object = json.loads(line)
-                    content = json_object['choices'][0]['delta'].get('content', '')
-                    if content:
-                        yield content
-                except json.JSONDecodeError:
-                    continue
-
-def generate_suggestions(messages):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://your-app-url.com",
-        "X-Title": "OpenRouter Chatbot",
-        "Content-Type": "application/json"
-    }
-
-    system_message = {
-        "role": "system",
-        "content": f"You are a suggested follow on prompt generator for a christian chatbot, therefore generate 4 very short maximum 10 words, diverse, and relevant suggestions for the user's next desired message based on the current context and conversation history. The suggestions should be appropriate for children and related to the current topic. You can use Markdown syntax and emoticons."
-    }
-
-    prompt = [system_message] + messages
-
-    data = {
-        "model": MODEL,
-        "messages": prompt,
-        "max_tokens": 150
-    }
-
-    response = requests.post(API_URL, headers=headers, json=data)
-    suggestions = response.json()['choices'][0]['message']['content'].split('\n')
-
-    # Remove numbering and any leading/trailing whitespace
-    cleaned_suggestions = [re.sub(r'^\d+\.\s*', '', s.strip()) for s in suggestions if s.strip()]
-
-    return cleaned_suggestions[:4]
-
-@app.route('/')
-def home():
-    return render_template('index.html', menu_config=menu_config)
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_message = request.json['message']
-    conversation_history.append({"role": "user", "content": user_message})
-
-    log_event('user_message', {
-        'message': user_message,
-        'prompt': current_prompt,
-        'mode': current_mode
-    })
-
-    def generate():
-        assistant_message = ""
-        for content in generate_response(conversation_history):
-            assistant_message += content
-            yield content
-
-        log_event('assistant_message', {
-            'message': assistant_message,
-            'prompt': current_prompt,
-            'mode': current_mode
-        })
-
-    return Response(stream_with_context(generate()), content_type='text/plain')
-
-@app.route('/suggestions', methods=['GET'])
-def get_suggestions():
-    suggestions = generate_suggestions(conversation_history)
-    log_event('suggestions_generated', {
-        'suggestions': suggestions
-    })
-    return jsonify(suggestions)
-
-@app.route('/set_prompt', methods=['POST'])
-def set_prompt():
-    global current_prompt, current_mode
-    current_prompt = request.json['prompt']
-    current_mode = request.json.get('mode', '')
-    log_event('prompt_set', {
-        'prompt': current_prompt,
-        'mode': current_mode
-    })
-    return jsonify({"status": "success"})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
 ## menu_config.json
 
 {
@@ -720,7 +284,7 @@ if __name__ == '__main__':
 				{
 					"name": "Maths Magic ✨",
 					"icon": "fas fa-magic",
-					"prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level."
+					"prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level."
 				},
 				{
 					"name": "Spelling Superstar 📝",
@@ -870,3 +434,374 @@ if __name__ == '__main__':
 		}
 	]
 }
+## main.py
+
+import os
+import logging
+import json
+import time
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context
+from llm_chat import generate_response, generate_suggestions
+
+# Set up Python's logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+app = Flask(__name__)
+
+LOG_FILE = 'chat_log.json'
+
+conversation_history = []
+current_prompt = ""
+current_mode = ""
+
+def load_menu_config():
+    with open('menu_config.json', 'r') as f:
+        return json.load(f)
+
+menu_config = load_menu_config()
+
+def log_event(event_type, data):
+    log_entry = {
+        'timestamp': time.time(),
+        'event_type': event_type,
+        'data': data
+    }
+
+    # Log to JSON file
+    try:
+        with open(LOG_FILE, 'r+') as f:
+            try:
+                log_data = json.load(f)
+            except json.JSONDecodeError:
+                log_data = []
+
+            log_data.append(log_entry)
+
+            f.seek(0)
+            json.dump(log_data, f, indent=2)
+            f.truncate()
+    except FileNotFoundError:
+        with open(LOG_FILE, 'w') as f:
+            json.dump([log_entry], f, indent=2)
+
+    # Also log using Python's logging
+    logging.info(f"Event: {event_type}, Data: {json.dumps(data, indent=2)}")
+
+@app.route('/')
+def home():
+    return render_template('index.html', menu_config=menu_config)
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    global conversation_history
+    user_message = request.json['message']
+    conversation_history.append({"role": "user", "content": user_message})
+
+    log_event('user_message', {
+        'message': user_message,
+        'prompt': current_prompt,
+        'mode': current_mode
+    })
+
+    def generate():
+        assistant_message = ""
+        for content in generate_response(conversation_history, current_prompt):
+            assistant_message += content
+            yield content
+
+        conversation_history.append({"role": "assistant", "content": assistant_message})
+
+        log_event('assistant_message', {
+            'message': assistant_message,
+            'prompt': current_prompt,
+            'mode': current_mode
+        })
+
+    return Response(stream_with_context(generate()), content_type='text/plain')
+
+@app.route('/suggestions', methods=['GET'])
+def get_suggestions():
+    global conversation_history
+    suggestions = generate_suggestions(conversation_history, current_prompt)
+    log_event('suggestions_generated', {
+        'suggestions': suggestions,
+        'conversation_history': conversation_history
+    })
+    logging.info(f"Generated suggestions: {json.dumps(suggestions, indent=2)}")
+    return jsonify(suggestions)
+
+@app.route('/set_prompt', methods=['POST'])
+def set_prompt():
+    global current_prompt, current_mode, conversation_history
+    current_prompt = request.json['prompt']
+    current_mode = request.json.get('mode', '')
+    conversation_history = []  # Reset conversation history when changing prompts
+    log_event('prompt_set', {
+        'prompt': current_prompt,
+        'mode': current_mode
+    })
+    return jsonify({"status": "success"})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+## test_llm_chat.py
+
+import unittest
+import os
+import logging
+from unittest.mock import patch, MagicMock
+from llm_chat import generate_response, generate_suggestions
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG,
+										format='%(asctime)s - %(levelname)s - %(message)s',
+										filename='test-log.txt',
+										filemode='w')
+
+logger = logging.getLogger(__name__)
+
+class TestLLMChat(unittest.TestCase):
+
+		def setUp(self):
+				logger.info(f"Starting test: {self._testMethodName}")
+
+		def tearDown(self):
+				logger.info(f"Finished test: {self._testMethodName}\n")
+
+		@patch('llm_chat.requests.post')
+		def test_generate_response(self, mock_post):
+				logger.info("Running test_generate_response")
+				# Mock the response from the API
+				mock_response = MagicMock()
+				mock_response.iter_lines.return_value = [
+						b'data: {"choices":[{"delta":{"content":"Hello"}}]}',
+						b'data: {"choices":[{"delta":{"content":" world"}}]}',
+						b'data: [DONE]'
+				]
+				mock_post.return_value = mock_response
+
+				messages = [{"role": "user", "content": "Hi"}]
+				current_prompt = "You are a helpful assistant"
+
+				logger.debug(f"Input messages: {messages}")
+				logger.debug(f"Current prompt: {current_prompt}")
+
+				result = list(generate_response(messages, current_prompt))
+				logger.debug(f"Generated response: {result}")
+
+				self.assertEqual(result, ["Hello", " world"])
+				logger.info("test_generate_response passed")
+
+		@patch('llm_chat.requests.post')
+		def test_generate_suggestions(self, mock_post):
+				logger.info("Running test_generate_suggestions")
+				# Mock the response from the API
+				mock_response = MagicMock()
+				mock_response.json.return_value = {
+						"choices": [
+								{
+										"message": {
+												"content": '[{"text":"Tell me about Jesus","icon":"fas fa-cross"}]'
+										}
+								}
+						]
+				}
+				mock_post.return_value = mock_response
+
+				messages = [{"role": "user", "content": "Hi"}]
+				current_prompt = "You are a helpful assistant"
+
+				logger.debug(f"Input messages: {messages}")
+				logger.debug(f"Current prompt: {current_prompt}")
+
+				result = generate_suggestions(messages, current_prompt)
+				logger.debug(f"Generated suggestions: {result}")
+
+				self.assertEqual(result, [{"text":"Tell me about Jesus","icon":"fas fa-cross"}])
+				logger.info("test_generate_suggestions passed")
+
+		@unittest.skipIf('OPENROUTER_API_KEY' not in os.environ, "API key not available")
+		def test_generate_response_integration(self):
+				logger.info("Running test_generate_response_integration")
+				messages = [{"role": "user", "content": "Hello, how are you?"}]
+				current_prompt = "You are a helpful assistant"
+
+				logger.debug(f"Input messages: {messages}")
+				logger.debug(f"Current prompt: {current_prompt}")
+
+				response = list(generate_response(messages, current_prompt))
+				logger.debug(f"Generated response: {response}")
+
+				self.assertTrue(len(response) > 0, "Response should not be empty")
+				logger.info("test_generate_response_integration passed")
+
+		@unittest.skipIf('OPENROUTER_API_KEY' not in os.environ, "API key not available")
+		def test_generate_suggestions_integration(self):
+				logger.info("Running test_generate_suggestions_integration")
+				messages = [{"role": "user", "content": "Tell me about Jesus"}]
+				current_prompt = "You are a Christian chatbot"
+
+				logger.debug(f"Input messages: {messages}")
+				logger.debug(f"Current prompt: {current_prompt}")
+
+				suggestions = generate_suggestions(messages, current_prompt)
+				logger.debug(f"Generated suggestions: {suggestions}")
+
+				self.assertTrue(len(suggestions) > 0, "Should return at least one suggestion")
+				self.assertIn('text', suggestions[0], "Suggestion should have 'text' field")
+				self.assertIn('icon', suggestions[0], "Suggestion should have 'icon' field")
+				logger.info("test_generate_suggestions_integration passed")
+
+if __name__ == '__main__':
+		unittest.main()
+## llm_chat.py
+
+import os
+import json
+import requests
+import logging
+
+OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "openai/gpt-4o"
+
+def generate_response(messages, current_prompt):
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
+
+		system_message = {
+				"role": "system",
+				"content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
+		}
+
+		messages = [system_message] + messages
+
+		data = {
+				"model": MODEL,
+				"messages": messages,
+				"stream": True
+		}
+
+		response = requests.post(API_URL, headers=headers, json=data, stream=True)
+
+		for line in response.iter_lines():
+				if line:
+						line = line.decode('utf-8')
+						if line.startswith('data: '):
+								line = line[6:]
+								if line.strip() == '[DONE]':
+										break
+								try:
+										json_object = json.loads(line)
+										content = json_object['choices'][0]['delta'].get('content', '')
+										if content:
+												yield content
+								except json.JSONDecodeError:
+										continue
+
+def generate_suggestions(messages):
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
+
+		system_message = {
+				"role": "system",
+				"content": """You are a suggested follow on prompt generator for a christian chatbot. Generate between 2 and 4 very short (maximum 10 words), diverse, and relevant suggestions for the user's next desired message based on the last message in the conversation. The suggestions should be appropriate for children and related to the current topic.
+
+Return the suggestions as a JSON array of objects, where each object has a 'text' field for the suggestion text and an 'icon' field for an appropriate emoji or FontAwesome icon class. Use 'fas fa-' prefix for FontAwesome icons.
+
+Example format:
+[
+		{
+				"text": "Tell me about Jesus' teachings 🙏",
+				"icon": "fas fa-cross"
+		},
+		{
+				"text": "How can I be kind to others? 😊",
+				"icon": "fas fa-heart"
+		},
+		{
+				"text": "What's your favorite Bible story? 📖",
+				"icon": "fas fa-book"
+		},
+		{
+				"text": "Let's talk about prayer",
+				"icon": "fas fa-pray"
+		}
+]
+"""
+		}
+
+		# Use only the last message from the chat history
+		last_message = messages[-1] if messages else {"role": "user", "content": ""}
+
+		full_messages = [system_message, last_message]
+
+		data = {
+				"model": MODEL,
+				"messages": full_messages,
+				"max_tokens": 250
+		}
+
+		try:
+				response = requests.post(API_URL, headers=headers, json=data)
+				response.raise_for_status()
+
+				response_json = response.json()
+				content = response_json['choices'][0]['message']['content']
+
+				try:
+						suggestions_json = json.loads(content)
+						return suggestions_json
+				except json.JSONDecodeError:
+						logging.warning(f"Failed to parse suggestions as JSON. Using fallback method.")
+						fallback_suggestion = {
+								"text": content[:50] + "..." if len(content) > 50 else content,
+								"icon": "fas fa-comment"
+						}
+						return [fallback_suggestion]
+
+		except requests.RequestException as e:
+				logging.error(f"Error making request to API: {str(e)}")
+				return []
+
+		except (KeyError, IndexError) as e:
+				logging.error(f"Error parsing API response: {str(e)}")
+				return []
+## chat_log.json
+
+[
+  {
+    "timestamp": 1719137965.5273285,
+    "event_type": "prompt_set",
+    "data": {
+      "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
+      "mode": ""
+    }
+  },
+  {
+    "timestamp": 1719137965.6568906,
+    "event_type": "user_message",
+    "data": {
+      "message": "Hi, I'm ready to start!",
+      "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
+      "mode": ""
+    }
+  },
+  {
+    "timestamp": 1719137966.936904,
+    "event_type": "assistant_message",
+    "data": {
+      "message": "Great! I'm so excited to help you with some math today. Could you please tell me what level you're comfortable with? We have Beginner, Intermediate, and Advanced.",
+      "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
+      "mode": ""
+    }
+  }
+]
