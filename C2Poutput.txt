@@ -9,248 +9,12 @@ this is a chat based website for young christians to explore their fair
 If recommending changes to a specifc file then please give the full file contents and not just the changes, there is no need to also describe the changes unless there is a problem I need to be aware of. 
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
------
-modify the function to create suggested answers to use the below proof of concept code, ammend other files like main.py as needed to work with it:
-
---------------------- Sample Proof of concept code to copy -----------------
-
-import os
-import json
-import requests
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4"
-
-def generate_response(messages, current_prompt):
-		headers = {
-				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
-				"HTTP-Referer": "https://your-app-url.com",
-				"X-Title": "OpenRouter Chatbot",
-				"Content-Type": "application/json"
-		}
-
-		system_message = {
-				"role": "system",
-				"content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
-		}
-
-		messages = [system_message] + messages
-
-		data = {
-				"model": MODEL,
-				"messages": messages,
-				"stream": True
-		}
-
-		response = requests.post(API_URL, headers=headers, json=data, stream=True)
-
-		for line in response.iter_lines():
-				if line:
-						line = line.decode('utf-8')
-						if line.startswith('data: '):
-								line = line[6:]
-								if line.strip() == '[DONE]':
-										break
-								try:
-										json_object = json.loads(line)
-										content = json_object['choices'][0]['delta'].get('content', '')
-										if content:
-												yield content
-								except json.JSONDecodeError:
-										continue
-
-def generate_suggestions(messages, current_prompt):
-	headers = {
-			"Authorization": f"Bearer {OPENROUTER_API_KEY}",
-			"HTTP-Referer": "https://your-app-url.com",
-			"X-Title": "OpenRouter Chatbot",
-			"Content-Type": "application/json"
-	}
-
-	schema = {
-			"type": "object",
-			"properties": {
-					"suggestions": {
-							"type": "array",
-							"items": {
-									"type": "object",
-									"properties": {
-											"text": {"type": "string"},
-											"icon": {"type": "string"}
-									},
-									"required": ["text", "icon"]
-							}
-					}
-			},
-			"required": ["suggestions"]
-	}
-
-	system_message = {
-			"role": "system",
-			"content": f"""You are a suggestion generator for a chatbot. The current context is:
-
-			{current_prompt}
-
-			Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. 
-
-			Provide the suggestions in JSON format according to the following schema:
-
-			{json.dumps(schema, indent=2)}
-
-			Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
-	}
-
-	# Use only the last message from the chat history
-	last_message = messages[-1] if messages else {"role": "user", "content": ""}
-
-	full_messages = [system_message, last_message]
-
-	data = {
-			"model": MODEL,
-			"messages": full_messages,
-			"max_tokens": 250
-	}
-
-	logger.info("Sending request to API")
-
-	try:
-			response = requests.post(API_URL, headers=headers, json=data)
-			response.raise_for_status()
-
-			response_json = response.json()
-			logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
-
-			if 'choices' not in response_json:
-					logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
-					return []
-
-			content = response_json['choices'][0]['message']['content']
-			logger.info(f"Content from API: {content}")
-
-			try:
-					suggestions_data = json.loads(content)
-					if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
-							suggestions = suggestions_data['suggestions']
-							logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
-							return suggestions
-					else:
-							logger.warning(f"Unexpected content structure. Content: {content}")
-							return []
-			except json.JSONDecodeError:
-					logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
-					return []
-
-	except requests.RequestException as e:
-			logger.error(f"Error making request to API: {str(e)}")
-			return []
-
-	except (KeyError, IndexError, TypeError) as e:
-			logger.error(f"Error parsing API response: {str(e)}")
-			logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
-			return []
-
-# Example usage
-if __name__ == "__main__":
-	sample_messages = [
-			{"role": "user", "content": "Hi, I'm ready to start!"},
-			{"role": "assistant", "content": "Great! What would you like to learn about today?"}
-	]
-	sample_prompt = "You are a helpful assistant for a learning platform."
-
-	logger.info("Generating suggestions...")
-	suggestions = generate_suggestions(sample_messages, sample_prompt)
-	logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")
-
-------- Here's the proof of concept program output---------------
-
-2024-06-23 11:37:03,465 - INFO - Generating suggestions...
-2024-06-23 11:37:03,465 - INFO - Sending request to API
-2024-06-23 11:37:03,466 - DEBUG - Starting new HTTPS connection (1): openrouter.ai:443
-2024-06-23 11:37:03,658 - DEBUG - https://openrouter.ai:443 "POST /api/v1/chat/completions HTTP/11" 200 None
-2024-06-23 11:37:07,934 - DEBUG - API Response: {
-	"id": "gen-QHQTrLH68pqAV30e8mLGEKUbHyQM",
-	"model": "openai/gpt-4",
-	"object": "chat.completion",
-	"created": 1719142623,
-	"choices": [
-		{
-			"index": 0,
-			"message": {
-				"role": "assistant",
-				"content": "{\n  \"suggestions\": [\n    {\n      \"text\": \"Search for Math courses\",\n      \"icon\": \"fas fa-search\"\n    },\n    {\n      \"text\": \"How to use this platform?\",\n      \"icon\": \"fas fa-question-circle\"\n    },\n    {\n      \"text\": \"Show my learning progress\",\n      \"icon\": \"fas fa-chart-line\"\n    },\n    {\n      \"text\": \"Find English language courses\",\n      \"icon\": \"fas fa-language\"\n    }\n  ]\n}"
-			},
-			"finish_reason": "stop"
-		}
-	],
-	"system_fingerprint": null,
-	"usage": {
-		"prompt_tokens": 226,
-		"completion_tokens": 105,
-		"total_tokens": 331
-	}
-}
-2024-06-23 11:37:07,935 - INFO - Content from API: {
-	"suggestions": [
-		{
-			"text": "Search for Math courses",
-			"icon": "fas fa-search"
-		},
-		{
-			"text": "How to use this platform?",
-			"icon": "fas fa-question-circle"
-		},
-		{
-			"text": "Show my learning progress",
-			"icon": "fas fa-chart-line"
-		},
-		{
-			"text": "Find English language courses",
-			"icon": "fas fa-language"
-		}
-	]
-}
-2024-06-23 11:37:07,935 - INFO - Parsed suggestions: [
-	{
-		"text": "Search for Math courses",
-		"icon": "fas fa-search"
-	},
-	{
-		"text": "How to use this platform?",
-		"icon": "fas fa-question-circle"
-	},
-	{
-		"text": "Show my learning progress",
-		"icon": "fas fa-chart-line"
-	},
-	{
-		"text": "Find English language courses",
-		"icon": "fas fa-language"
-	}
-]
-2024-06-23 11:37:07,936 - INFO - Final suggestions: [
-	{
-		"text": "Search for Math courses",
-		"icon": "fas fa-search"
-	},
-	{
-		"text": "How to use this platform?",
-		"icon": "fas fa-question-circle"
-	},
-	{
-		"text": "Show my learning progress",
-		"icon": "fas fa-chart-line"
-	},
-	{
-		"text": "Find English language courses",
-		"icon": "fas fa-language"
-	}
-]
+----- Instructions -----------
+add avatar next to the chat messages like the mock up image.  the avatar svg files are held in the assets folder and the name of the one to use in the menu config file e.g. "name": "The Valley of Wisdom",
+"icon": "fas fa-seedling",
+"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a serene valley where wisdom, discernment, and prayer help uncover hidden treasures.",
+"avatar": "woman1.svg"
+----------------
 ## templates/index.html
 
 <!DOCTYPE html>
@@ -512,277 +276,160 @@ if __name__ == "__main__":
     </script>
 </body>
 </html>
-## menu_config.json
-
-{
-	"menu": [
-		{
-			"name": "Brainy Quizzes 🤔",
-			"icon": "fas fa-brain",
-			"submenu": [
-				{
-					"name": "Maths Magic ✨",
-					"icon": "fas fa-magic",
-					"prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level."
-				},
-				{
-					"name": "Spelling Superstar 📝",
-					"icon": "fas fa-spell-check",
-					"prompt": "You are a spelling coach for children. Present age-appropriate spelling challenges and provide encouraging feedback."
-				},
-				{
-					"name": "General Knowledge Guru 🤓",
-					"icon": "fas fa-university",
-					"prompt": "You are a general knowledge expert for children. Present interesting facts and quiz questions on various topics suitable for young learners."
-				},
-				{
-					"name": "Science Whiz 🔬",
-					"icon": "fas fa-flask",
-					"prompt": "You are a science educator for children. Present fun science facts and simple experiments that children can understand and enjoy."
-				},
-				{
-					"name": "Bible Brainiac ✝️",
-					"icon": "fas fa-bible",
-					"prompt": "You are a Bible expert for children. Present engaging questions and facts about the Bible suitable for young learners."
-				},
-				{
-					"name": "Defend the Faith ✝️",
-					"icon": "fas fa-shield-alt",
-					"prompt": "You are a Christian apologist for children. Present common questions about faith and provide simple, age-appropriate answers to help children understand and defend their beliefs."
-				}
-			]
-		},
-		{
-			"name": "Compare World Views Chats 🌎",
-			"icon": "fas fa-globe",
-			"submenu": [
-				{
-					"name": "Atheist and Christian",
-					"icon": "fas fa-balance-scale",
-					"prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-				},
-				{
-					"name": "Muslim and Christian",
-					"icon": "fas fa-handshake",
-					"prompt": "You are a neutral moderator presenting a respectful dialogue between Muslim and Christian viewpoints. Explain concepts in a way that's suitable for children to understand."
-				},
-				{
-					"name": "WLC v Dawkins",
-					"icon": "fas fa-users",
-					"prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective."
-				}
-			]
-		},
-		{
-			"name": "Chat with Tutors 📚",
-			"icon": "fas fa-chalkboard-teacher",
-			"submenu": [
-				{
-					"name": "Christian Mentor & Friend 📊",
-					"icon": "fas fa-user-friends",
-					"prompt": "You are a wise Christian mentor and friend for children. Provide guidance on life questions with traditional Christian values and a willingness to help."
-				},
-				{
-					"name": "Maths Master 📝",
-					"icon": "fas fa-calculator",
-					"prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples."
-				},
-				{
-					"name": "Science Sensei 🔬",
-					"icon": "fas fa-atom",
-					"prompt": "You are a friendly science tutor for children. Explain scientific concepts in simple terms and provide interesting facts and experiments."
-				},
-				{
-					"name": "English Enthusiast 📚",
-					"icon": "fas fa-book",
-					"prompt": "You are a friendly English tutor for children. Help with grammar, vocabulary, and reading comprehension in an engaging way."
-				},
-				{
-					"name": "History Hero",
-					"icon": "fas fa-landmark",
-					"prompt": "You are a history expert specializing in historical events, timelines, and cultural context. Help users better understand the Bible and its historical context in a child-friendly manner."
-				},
-				{
-					"name": "Apologist Ace",
-					"icon": "fas fa-comments",
-					"prompt": "You are an expert in Christian apologetics. Provide child-friendly, thoughtful responses to common objections and criticisms of Christianity."
-				},
-				{
-					"name": "Bible Scholar",
-					"icon": "fas fa-book-reader",
-					"prompt": "You are a Bible expert with knowledge of biblical languages, exegesis, and hermeneutics. Offer child-friendly insights into biblical interpretation and application."
-				},
-				{
-					"name": "Devotional Coach",
-					"icon": "fas fa-pray",
-					"prompt": "You are a spiritual growth coach for children. Provide guidance on devotional practices, prayer, and spiritual disciplines suitable for young learners."
-				},
-				{
-					"name": "Missions Mentor",
-					"icon": "fas fa-globe-americas",
-					"prompt": "You are a missions expert for children. Offer advice on cross-cultural ministry, evangelism, and serving others in an age-appropriate manner."
-				}
-			]
-		},
-		{
-			"name": "Inquire on a Bible Passage or Topic",
-			"icon": "fas fa-search",
-			"submenu": [
-				{
-					"name": "Topic",
-					"icon": "fas fa-tags",
-					"prompt": "You are a Bible topic expert for children. Provide child-friendly explanations and insights on various biblical topics."
-				},
-				{
-					"name": "Verses",
-					"icon": "fas fa-quote-right",
-					"prompt": "You are a Bible verse expert for children. Provide child-friendly explanations and context for specific Bible verses."
-				}
-			]
-		},
-		{
-			"name": "Adventure Games",
-			"icon": "fas fa-gamepad",
-			"submenu": [
-				{
-					"name": "The Lost City of Kindness",
-					"icon": "fas fa-city",
-					"prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where kindness and generosity are the keys to success."
-				},
-				{
-					"name": "The Forest of Forgiveness",
-					"icon": "fas fa-tree",
-					"prompt": "You are a game master for 'The Forest of Forgiveness'. Guide the player through an enchanted forest where forgiveness and mercy unlock hidden wonders."
-				},
-				{
-					"name": "The Mountain of Courage",
-					"icon": "fas fa-mountain",
-					"prompt": "You are a game master for 'The Mountain of Courage'. Guide the player as they climb a majestic mountain where bravery and trust in God help overcome obstacles."
-				},
-				{
-					"name": "The River of Hope",
-					"icon": "fas fa-water",
-					"prompt": "You are a game master for 'The River of Hope'. Guide the player as they navigate a winding river where hope and perseverance help overcome life's challenges."
-				},
-				{
-					"name": "The Valley of Wisdom",
-					"icon": "fas fa-seedling",
-					"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a serene valley where wisdom, discernment, and prayer help uncover hidden treasures."
-				}
-			]
-		}
-	]
-}
 ## test_llm_chat.py
 
-import unittest
 import os
+import json
+import requests
 import logging
-from unittest.mock import patch, MagicMock
-from llm_chat import generate_response, generate_suggestions
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG,
-										format='%(asctime)s - %(levelname)s - %(message)s',
-										filename='test-log.txt',
-										filemode='w')
-
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class TestLLMChat(unittest.TestCase):
+OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "openai/gpt-4"
 
-		def setUp(self):
-				logger.info(f"Starting test: {self._testMethodName}")
+def generate_response(messages, current_prompt):
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
 
-		def tearDown(self):
-				logger.info(f"Finished test: {self._testMethodName}\n")
+		system_message = {
+				"role": "system",
+				"content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
+		}
 
-		@patch('llm_chat.requests.post')
-		def test_generate_response(self, mock_post):
-				logger.info("Running test_generate_response")
-				# Mock the response from the API
-				mock_response = MagicMock()
-				mock_response.iter_lines.return_value = [
-						b'data: {"choices":[{"delta":{"content":"Hello"}}]}',
-						b'data: {"choices":[{"delta":{"content":" world"}}]}',
-						b'data: [DONE]'
-				]
-				mock_post.return_value = mock_response
+		messages = [system_message] + messages
 
-				messages = [{"role": "user", "content": "Hi"}]
-				current_prompt = "You are a helpful assistant"
+		data = {
+				"model": MODEL,
+				"messages": messages,
+				"stream": True
+		}
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+		response = requests.post(API_URL, headers=headers, json=data, stream=True)
 
-				result = list(generate_response(messages, current_prompt))
-				logger.debug(f"Generated response: {result}")
+		for line in response.iter_lines():
+				if line:
+						line = line.decode('utf-8')
+						if line.startswith('data: '):
+								line = line[6:]
+								if line.strip() == '[DONE]':
+										break
+								try:
+										json_object = json.loads(line)
+										content = json_object['choices'][0]['delta'].get('content', '')
+										if content:
+												yield content
+								except json.JSONDecodeError:
+										continue
 
-				self.assertEqual(result, ["Hello", " world"])
-				logger.info("test_generate_response passed")
+def generate_suggestions(messages, current_prompt):
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
 
-		@patch('llm_chat.requests.post')
-		def test_generate_suggestions(self, mock_post):
-				logger.info("Running test_generate_suggestions")
-				# Mock the response from the API
-				mock_response = MagicMock()
-				mock_response.json.return_value = {
-						"choices": [
-								{
-										"message": {
-												"content": '[{"text":"Tell me about Jesus","icon":"fas fa-cross"}]'
-										}
+		schema = {
+				"type": "object",
+				"properties": {
+						"suggestions": {
+								"type": "array",
+								"items": {
+										"type": "object",
+										"properties": {
+												"text": {"type": "string"},
+												"icon": {"type": "string"}
+										},
+										"required": ["text", "icon"]
 								}
-						]
-				}
-				mock_post.return_value = mock_response
+						}
+				},
+				"required": ["suggestions"]
+		}
 
-				messages = [{"role": "user", "content": "Hi"}]
-				current_prompt = "You are a helpful assistant"
+		system_message = {
+				"role": "system",
+				"content": f"""You are a suggestion generator for a chatbot. The current context is:
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+				{current_prompt}
 
-				result = generate_suggestions(messages, current_prompt)
-				logger.debug(f"Generated suggestions: {result}")
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. 
 
-				self.assertEqual(result, [{"text":"Tell me about Jesus","icon":"fas fa-cross"}])
-				logger.info("test_generate_suggestions passed")
+				Provide the suggestions in JSON format according to the following schema:
 
-		@unittest.skipIf('OPENROUTER_API_KEY' not in os.environ, "API key not available")
-		def test_generate_response_integration(self):
-				logger.info("Running test_generate_response_integration")
-				messages = [{"role": "user", "content": "Hello, how are you?"}]
-				current_prompt = "You are a helpful assistant"
+				{json.dumps(schema, indent=2)}
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
+		}
 
-				response = list(generate_response(messages, current_prompt))
-				logger.debug(f"Generated response: {response}")
+		# Use only the last message from the chat history
+		last_message = messages[-1] if messages else {"role": "user", "content": ""}
 
-				self.assertTrue(len(response) > 0, "Response should not be empty")
-				logger.info("test_generate_response_integration passed")
+		full_messages = [system_message, last_message]
 
-		@unittest.skipIf('OPENROUTER_API_KEY' not in os.environ, "API key not available")
-		def test_generate_suggestions_integration(self):
-				logger.info("Running test_generate_suggestions_integration")
-				messages = [{"role": "user", "content": "Tell me about Jesus"}]
-				current_prompt = "You are a Christian chatbot"
+		data = {
+				"model": MODEL,
+				"messages": full_messages,
+				"max_tokens": 250
+		}
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+		logger.info("Sending request to API")
 
-				suggestions = generate_suggestions(messages, current_prompt)
-				logger.debug(f"Generated suggestions: {suggestions}")
+		try:
+				response = requests.post(API_URL, headers=headers, json=data)
+				response.raise_for_status()
 
-				self.assertTrue(len(suggestions) > 0, "Should return at least one suggestion")
-				self.assertIn('text', suggestions[0], "Suggestion should have 'text' field")
-				self.assertIn('icon', suggestions[0], "Suggestion should have 'icon' field")
-				logger.info("test_generate_suggestions_integration passed")
+				response_json = response.json()
+				logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
 
-if __name__ == '__main__':
-		unittest.main()
+				if 'choices' not in response_json:
+						logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
+						return []
+
+				content = response_json['choices'][0]['message']['content']
+				logger.info(f"Content from API: {content}")
+
+				try:
+						suggestions_data = json.loads(content)
+						if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+								suggestions = suggestions_data['suggestions']
+								logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+								return suggestions
+						else:
+								logger.warning(f"Unexpected content structure. Content: {content}")
+								return []
+				except json.JSONDecodeError:
+						logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
+						return []
+
+		except requests.RequestException as e:
+				logger.error(f"Error making request to API: {str(e)}")
+				return []
+
+		except (KeyError, IndexError, TypeError) as e:
+				logger.error(f"Error parsing API response: {str(e)}")
+				logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
+				return []
+
+# Example usage
+if __name__ == "__main__":
+		sample_messages = [
+				{"role": "user", "content": "Hi, I'm ready to start!"},
+				{"role": "assistant", "content": "Great! What would you like to learn about today?"}
+		]
+		sample_prompt = "You are a helpful assistant for a learning platform."
+
+		logger.info("Generating suggestions...")
+		suggestions = generate_suggestions(sample_messages, sample_prompt)
+		logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")
 ## main.py
 
 import os
@@ -849,7 +496,14 @@ def chat():
 @app.route('/suggestions', methods=['GET'])
 def get_suggestions():
     global conversation_history
-    suggestions = generate_suggestions(conversation_history, current_prompt)
+    suggestions_data = generate_suggestions(conversation_history, current_prompt)
+
+    # Check if suggestions_data is a dictionary with a 'suggestions' key
+    if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+        suggestions = suggestions_data['suggestions']
+    else:
+        suggestions = suggestions_data  # Assume it's already the correct format
+
     log_event('suggestions_generated', {
         'suggestions': suggestions,
         'conversation_history': conversation_history
@@ -878,9 +532,14 @@ import json
 import requests
 import logging
 
+# Set up logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4o"
+CHATMODEL = "openai/gpt-4o"
+SUGGESTMODEL = "openai/gpt-4"
 
 def generate_response(messages, current_prompt):
 		headers = {
@@ -898,7 +557,7 @@ def generate_response(messages, current_prompt):
 		messages = [system_message] + messages
 
 		data = {
-				"model": MODEL,
+				"model": CHATMODEL,
 				"messages": messages,
 				"stream": True
 		}
@@ -921,193 +580,308 @@ def generate_response(messages, current_prompt):
 										continue
 
 def generate_suggestions(messages, current_prompt):
-	headers = {
-			"Authorization": f"Bearer {OPENROUTER_API_KEY}",
-			"HTTP-Referer": "https://your-app-url.com",
-			"X-Title": "OpenRouter Chatbot",
-			"Content-Type": "application/json"
-	}
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
 
-	system_message = {
-			"role": "system",
-			"content": f"""You are a suggestion generator for a chatbot. The current context is:
+		schema = {
+				"type": "object",
+				"properties": {
+						"suggestions": {
+								"type": "array",
+								"items": {
+										"type": "object",
+										"properties": {
+												"text": {"type": "string"},
+												"icon": {"type": "string"}
+										},
+										"required": ["text", "icon"]
+								}
+						}
+				},
+				"required": ["suggestions"]
+		}
 
-			{current_prompt}
+		system_message = {
+				"role": "system",
+				"content": f"""You are a suggestion generator for a chatbot. The current context is:
 
-			Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. Return the suggestions as a JSON array of objects, where each object has a 'text' field for the suggestion text and an 'icon' field for an appropriate FontAwesome icon class. Use 'fas fa-' prefix for FontAwesome icons."""
-	}
+				{current_prompt}
 
-	# Use only the last message from the chat history
-	last_message = messages[-1] if messages else {"role": "user", "content": ""}
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. If the last message contains multiple choice answers then use those as the basis to suggest follow on responses
 
-	full_messages = [system_message, last_message]
+				Provide the suggestions in JSON format according to the following schema:
 
-	data = {
-			"model": MODEL,
-			"messages": full_messages,
-			"max_tokens": 250
-	}
+				{json.dumps(schema, indent=2)}
 
-	try:
-			response = requests.post(API_URL, headers=headers, json=data)
-			response.raise_for_status()
+				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
+		}
 
-			response_json = response.json()
-			content = response_json['choices'][0]['message']['content']
+		# Use only the last message from the chat history
+		last_message = messages[-1] if messages else {"role": "user", "content": ""}
 
-			try:
-					suggestions_json = json.loads(content)
-					return suggestions_json
-			except json.JSONDecodeError:
-					logging.warning(f"Failed to parse suggestions as JSON. Using fallback method.")
-					fallback_suggestion = {
-							"text": content[:50] + "..." if len(content) > 50 else content,
-							"icon": "fas fa-comment"
-					}
-					return [fallback_suggestion]
+		full_messages = [system_message, last_message]
 
-	except requests.RequestException as e:
-			logging.error(f"Error making request to API: {str(e)}")
-			return []
+		data = {
+				"model": SUGGESTMODEL,
+				"messages": full_messages,
+				"max_tokens": 250
+		}
 
-	except (KeyError, IndexError) as e:
-			logging.error(f"Error parsing API response: {str(e)}")
-			return []
+		logger.info("Sending request to API")
+
+		try:
+				response = requests.post(API_URL, headers=headers, json=data)
+				response.raise_for_status()
+
+				response_json = response.json()
+				logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
+
+				if 'choices' not in response_json:
+						logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
+						return []
+
+				content = response_json['choices'][0]['message']['content']
+				logger.info(f"Content from API: {content}")
+
+				try:
+						suggestions_data = json.loads(content)
+						if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+								suggestions = suggestions_data['suggestions']
+						elif isinstance(suggestions_data, list):
+								suggestions = suggestions_data
+						else:
+								logger.warning(f"Unexpected content structure. Content: {content}")
+								return []
+
+						logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+						return suggestions
+				except json.JSONDecodeError:
+						logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
+						return []
+
+		except requests.RequestException as e:
+				logger.error(f"Error making request to API: {str(e)}")
+				return []
+
+		except (KeyError, IndexError, TypeError) as e:
+				logger.error(f"Error parsing API response: {str(e)}")
+				logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
+				return []
+
+# Example usage
+if __name__ == "__main__":
+		sample_messages = [
+				{"role": "user", "content": "Hi, I'm ready to start!"},
+				{"role": "assistant", "content": "Great! What would you like to learn about today?"}
+		]
+		sample_prompt = "You are a helpful assistant for a learning platform."
+
+		logger.info("Generating suggestions...")
+		suggestions = generate_suggestions(sample_messages, sample_prompt)
+		logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")
 ## log.txt
 
-1719138535.237622 - page_load - {"page": "home"}
-2024-06-23 10:28:55,237 - INFO - Event: page_load, Data: {
-  "page": "home"
-}
-1719138538.0546808 - prompt_set - {"prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
-2024-06-23 10:28:58,054 - INFO - Event: prompt_set, Data: {
-  "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
-  "mode": ""
-}
-1719138538.1753972 - user_message - {"message": "Hi, I'm ready to start!", "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
-2024-06-23 10:28:58,175 - INFO - Event: user_message, Data: {
-  "message": "Hi, I'm ready to start!",
-  "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
-  "mode": ""
-}
-2024-06-23 10:28:58,177 - DEBUG - Starting new HTTPS connection (1): openrouter.ai:443
-2024-06-23 10:28:58,390 - DEBUG - https://openrouter.ai:443 "POST /api/v1/chat/completions HTTP/11" 200 None
-1719138539.6827989 - assistant_message - {"message": "Great! I'm excited to help you with your math today. Could you please tell me which skill level you'd like to work on? You can choose from beginner, intermediate, or advanced.", "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
-2024-06-23 10:28:59,683 - INFO - Event: assistant_message, Data: {
-  "message": "Great! I'm excited to help you with your math today. Could you please tell me which skill level you'd like to work on? You can choose from beginner, intermediate, or advanced.",
-  "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
-  "mode": ""
-}
-2024-06-23 10:28:59,851 - DEBUG - Starting new HTTPS connection (1): openrouter.ai:443
-2024-06-23 10:29:00,045 - DEBUG - https://openrouter.ai:443 "POST /api/v1/chat/completions HTTP/11" 200 None
-1719138541.4304476 - suggestions_generated - {"suggestions": [{"text": "Beginner level, please!", "icon": "fas fa-smile"}, {"text": "Let's try intermediate!", "icon": "fas fa-lightbulb"}, {"text": "Advanced math, please!", "icon": "fas fa-brain"}], "conversation_history": [{"role": "user", "content": "Hi, I'm ready to start!"}, {"role": "assistant", "content": "Great! I'm excited to help you with your math today. Could you please tell me which skill level you'd like to work on? You can choose from beginner, intermediate, or advanced."}]}
-2024-06-23 10:29:01,430 - INFO - Event: suggestions_generated, Data: {
-  "suggestions": [
-    {
-      "text": "Beginner level, please!",
-      "icon": "fas fa-smile"
-    },
-    {
-      "text": "Let's try intermediate!",
-      "icon": "fas fa-lightbulb"
-    },
-    {
-      "text": "Advanced math, please!",
-      "icon": "fas fa-brain"
-    }
-  ],
-  "conversation_history": [
-    {
-      "role": "user",
-      "content": "Hi, I'm ready to start!"
-    },
-    {
-      "role": "assistant",
-      "content": "Great! I'm excited to help you with your math today. Could you please tell me which skill level you'd like to work on? You can choose from beginner, intermediate, or advanced."
-    }
-  ]
-}
-2024-06-23 10:29:01,430 - INFO - Generated suggestions: [
-  {
-    "text": "Beginner level, please!",
-    "icon": "fas fa-smile"
-  },
-  {
-    "text": "Let's try intermediate!",
-    "icon": "fas fa-lightbulb"
-  },
-  {
-    "text": "Advanced math, please!",
-    "icon": "fas fa-brain"
-  }
-]
-1719138546.519244 - user_message - {"message": "Beginner level, please!", "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
-2024-06-23 10:29:06,520 - INFO - Event: user_message, Data: {
-  "message": "Beginner level, please!",
-  "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
-  "mode": ""
-}
-2024-06-23 10:29:06,521 - DEBUG - Starting new HTTPS connection (1): openrouter.ai:443
-2024-06-23 10:29:06,724 - DEBUG - https://openrouter.ai:443 "POST /api/v1/chat/completions HTTP/11" 200 None
-1719138548.163229 - assistant_message - {"message": "Awesome choice! Let's have some fun with some beginner-level math problems. Are you ready? Here\u2019s your first question:\n\n**1. What is 7 + 3?**\n\na) 9\n\nb) 10\n\nc) 11\n\nd) 13\n\nTake your time and let me know what you think the answer is!", "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
-2024-06-23 10:29:08,163 - INFO - Event: assistant_message, Data: {
-  "message": "Awesome choice! Let's have some fun with some beginner-level math problems. Are you ready? Here\u2019s your first question:\n\n**1. What is 7 + 3?**\n\na) 9\n\nb) 10\n\nc) 11\n\nd) 13\n\nTake your time and let me know what you think the answer is!",
-  "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
-  "mode": ""
-}
-2024-06-23 10:29:08,271 - DEBUG - Starting new HTTPS connection (1): openrouter.ai:443
-2024-06-23 10:29:08,444 - DEBUG - https://openrouter.ai:443 "POST /api/v1/chat/completions HTTP/11" 200 None
-1719138550.042903 - suggestions_generated - {"suggestions": {"suggestions": [{"text": "Begin the quiz!", "icon": "fas fa-play"}, {"text": "I'm ready!", "icon": "fas fa-check"}, {"text": "Let's start.", "icon": "fas fa-smile"}]}, "conversation_history": [{"role": "user", "content": "Hi, I'm ready to start!"}, {"role": "assistant", "content": "Great! I'm excited to help you with your math today. Could you please tell me which skill level you'd like to work on? You can choose from beginner, intermediate, or advanced."}, {"role": "user", "content": "Beginner level, please!"}, {"role": "assistant", "content": "Awesome choice! Let's have some fun with some beginner-level math problems. Are you ready? Here\u2019s your first question:\n\n**1. What is 7 + 3?**\n\na) 9\n\nb) 10\n\nc) 11\n\nd) 13\n\nTake your time and let me know what you think the answer is!"}]}
-2024-06-23 10:29:10,043 - INFO - Event: suggestions_generated, Data: {
-  "suggestions": {
-    "suggestions": [
-      {
-        "text": "Begin the quiz!",
-        "icon": "fas fa-play"
-      },
-      {
-        "text": "I'm ready!",
-        "icon": "fas fa-check"
-      },
-      {
-        "text": "Let's start.",
-        "icon": "fas fa-smile"
-      }
-    ]
-  },
-  "conversation_history": [
-    {
-      "role": "user",
-      "content": "Hi, I'm ready to start!"
-    },
-    {
-      "role": "assistant",
-      "content": "Great! I'm excited to help you with your math today. Could you please tell me which skill level you'd like to work on? You can choose from beginner, intermediate, or advanced."
-    },
-    {
-      "role": "user",
-      "content": "Beginner level, please!"
-    },
-    {
-      "role": "assistant",
-      "content": "Awesome choice! Let's have some fun with some beginner-level math problems. Are you ready? Here\u2019s your first question:\n\n**1. What is 7 + 3?**\n\na) 9\n\nb) 10\n\nc) 11\n\nd) 13\n\nTake your time and let me know what you think the answer is!"
-    }
-  ]
-}
-2024-06-23 10:29:10,043 - INFO - Generated suggestions: {
-  "suggestions": [
-    {
-      "text": "Begin the quiz!",
-      "icon": "fas fa-play"
-    },
-    {
-      "text": "I'm ready!",
-      "icon": "fas fa-check"
-    },
-    {
-      "text": "Let's start.",
-      "icon": "fas fa-smile"
-    }
-  ]
-}
+1719147676.3016176 - page_load - {"page": "home"}
+1719147679.388176 - prompt_set - {"prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Use 4 multiple choice options format. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
+1719147679.5098917 - user_message - {"message": "Hi, I'm ready to start!", "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Use 4 multiple choice options format. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
+1719147682.1657124 - assistant_message - {"message": "Great! I'm excited that you're ready to start learning some math! \n\nLet's begin by deciding on the skill level that we'll be working at today. Please choose one:\n\n1. Beginner: Basic addition, subtraction, simple shapes, and counting.\n2. Intermediate: Multiplication, division, fractions, and simple word problems.\n3. Advanced: More complex fractions, decimals, geometry, and multi-step word problems.\n\nWhich one would you like to go with?", "prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Use 4 multiple choice options format. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.", "mode": ""}
+1719147695.26049 - suggestions_generated - {"suggestions": [], "conversation_history": [{"role": "user", "content": "Hi, I'm ready to start!"}, {"role": "assistant", "content": "Great! I'm excited that you're ready to start learning some math! \n\nLet's begin by deciding on the skill level that we'll be working at today. Please choose one:\n\n1. Beginner: Basic addition, subtraction, simple shapes, and counting.\n2. Intermediate: Multiplication, division, fractions, and simple word problems.\n3. Advanced: More complex fractions, decimals, geometry, and multi-step word problems.\n\nWhich one would you like to go with?"}]}
+1719147695.262663 - prompt_set - {"prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.", "mode": ""}
+1719147695.2635617 - prompt_set - {"prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.", "mode": ""}
+1719147695.3822289 - user_message - {"message": "Hi, I'm ready to start!", "prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.", "mode": ""}
+1719147709.8173213 - assistant_message - {"message": "Great! Let's start the dialogue with some common questions kids might have about science and religion.\n\n**Question 1: How did the universe begin?**\n\n**WLC:** Many people believe that the universe began with God creating it. There's something called the \"Big Bang,\" which scientists say was the moment when the universe started expanding from a very small point. I think God made this happen because everything that begins has a cause, and God is the cause of the universe.\n\n**Dawkins:** Scientists agree that the universe started with the Big Bang, but many of them don't think it needed a god to happen. Instead, it was a natural event in the laws of physics. We don't know everything, but we're learning more every day by studying and exploring the universe.\n\n**Question 2: Can you believe in science and religion at the same time?**\n\n**WLC:** Yes, I think you can believe in both. Science helps us understand how things work in the world, and religion answers why we are here and what our purpose is. They can work together to give us a fuller understanding of life.\n\n**Dawkins:** I believe that science is the best way to understand the world because it relies on evidence and experiments. Religion and science sometimes give different answers, and I think it's important to follow what we can test and prove.\n\n**Question 3: What happens after we die?**\n\n**WLC:** According to my Christian faith, I believe that after we die, we go to be with God forever if we have a relationship with Him. There is heaven, a wonderful place, and this belief gives many people hope and comfort.\n\n**Dawkins:** From a scientific point of view, we don't have any evidence that there's life after death. Our bodies stop working, and that's the end. Some people might find this idea scary, but it also makes our time alive very special and precious.\n\n**Question 4: Why do good and bad things happen?**\n\n**WLC:** Good and bad things happen because we live in a world where we have free will, which means we can make choices. Sometimes people make bad choices, which cause suffering. Also, I believe that God has a bigger plan, and even though we don\u2019t always understand it, there\u2019s a reason behind everything.\n\n**Dawkins:** Good and bad things happen because of chance, our actions, and natural events. For example, if a tree falls in a storm, it's because of the wind, not because someone or something made it happen for a reason. We can try to make the world better by understanding how things work and making good choices.\n\n**Question 5: Why do people believe different things?**\n\n**WLC:** People believe different things because they grow up in different cultures and families, and have different experiences. I believe that God wants everyone to know Him, but people have to make their own choices about what to believe.\n\n**Dawkins:** People believe different things because human brains are very good at creating stories and explanations, especially before we had modern science. Different cultures developed their own stories and beliefs to explain the world around them, and these beliefs have been passed down through generations.\n\nThese answers should give you an idea of how people can see the same questions in different ways. It's important to think about these ideas and decide what you believe!", "prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.", "mode": ""}
+1719147709.8186615 - user_message - {"message": "Hi, I'm ready to start!", "prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.", "mode": ""}
+1719147719.2729442 - assistant_message - {"message": "Great! Let's start the dialogue with some interesting questions kids might have about the world and our place in it.\n\n**Question 1: Why is the sky blue?**\n\n**WLC:** The sky appears blue because of the way sunlight interacts with our atmosphere. God created the natural world with these fascinating properties, and science helps us understand how they work.\n\n**Dawkins:** The sky is blue because of a process called Rayleigh scattering. Sunlight is made up of many colors, but the molecules in the Earth's atmosphere scatter blue light more effectively, making the sky appear blue to our eyes.\n\n**Question 2: Why do we have different seasons?**\n\n**WLC:** We have different seasons because of the way God designed the Earth. It tilts as it orbits around the sun, which changes the amount of sunlight different parts of the world receive, creating seasons.\n\n**Dawkins:** Seasons happen due to the tilt of the Earth's axis as it orbits the sun. When a hemisphere tilts toward the sun, it experiences summer because it receives more direct sunlight. When it tilts away, it experiences winter.\n\n**Question 3: Who decides what is right and wrong?**\n\n**WLC:** Many people believe that God helps us understand what is right and wrong through teachings and scriptures. These guidelines help us make good choices and live kind, loving lives.\n\n**Dawkins:** Our understanding of right and wrong comes from our brains, our experiences, and society. We learn from our families, schools, and communities how to behave in ways that help everyone live together peacefully and fairly.\n\n**Question 4: Why do we need to go to school?**\n\n**WLC:** School is important because it helps us learn about the world that God has created. By learning reading, math, and science, we can understand more about our place in the world and how to live good, meaningful lives.\n\n**Dawkins:** Education is crucial because it helps us understand the world, develop skills, and think critically. School provides knowledge and tools that enable us to solve problems, make good decisions, and contribute to society.\n\n**Question 5: Can animals think and feel like humans?**\n\n**WLC:** Animals are part of God's creation and can think and feel to some extent, but humans are unique because we are made in God's image. This means we have abilities like complex reasoning and deep emotions that animals do not.\n\n**Dawkins:** Animals certainly can think and feel, although their brains work differently from humans'. They can experience emotions and solve problems, but their abilities vary widely between different species. Understanding animal behavior through science helps us appreciate their complexity.\n\nThis dialogue shows how different perspectives can provide varied and insightful answers to common questions. Remember, it's important to think about these ideas and decide what makes the most sense to you!", "prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.", "mode": ""}
+1719147727.4826503 - suggestions_generated - {"suggestions": [], "conversation_history": [{"role": "user", "content": "Hi, I'm ready to start!"}, {"role": "assistant", "content": "Great! Let's start the dialogue with some common questions kids might have about science and religion.\n\n**Question 1: How did the universe begin?**\n\n**WLC:** Many people believe that the universe began with God creating it. There's something called the \"Big Bang,\" which scientists say was the moment when the universe started expanding from a very small point. I think God made this happen because everything that begins has a cause, and God is the cause of the universe.\n\n**Dawkins:** Scientists agree that the universe started with the Big Bang, but many of them don't think it needed a god to happen. Instead, it was a natural event in the laws of physics. We don't know everything, but we're learning more every day by studying and exploring the universe.\n\n**Question 2: Can you believe in science and religion at the same time?**\n\n**WLC:** Yes, I think you can believe in both. Science helps us understand how things work in the world, and religion answers why we are here and what our purpose is. They can work together to give us a fuller understanding of life.\n\n**Dawkins:** I believe that science is the best way to understand the world because it relies on evidence and experiments. Religion and science sometimes give different answers, and I think it's important to follow what we can test and prove.\n\n**Question 3: What happens after we die?**\n\n**WLC:** According to my Christian faith, I believe that after we die, we go to be with God forever if we have a relationship with Him. There is heaven, a wonderful place, and this belief gives many people hope and comfort.\n\n**Dawkins:** From a scientific point of view, we don't have any evidence that there's life after death. Our bodies stop working, and that's the end. Some people might find this idea scary, but it also makes our time alive very special and precious.\n\n**Question 4: Why do good and bad things happen?**\n\n**WLC:** Good and bad things happen because we live in a world where we have free will, which means we can make choices. Sometimes people make bad choices, which cause suffering. Also, I believe that God has a bigger plan, and even though we don\u2019t always understand it, there\u2019s a reason behind everything.\n\n**Dawkins:** Good and bad things happen because of chance, our actions, and natural events. For example, if a tree falls in a storm, it's because of the wind, not because someone or something made it happen for a reason. We can try to make the world better by understanding how things work and making good choices.\n\n**Question 5: Why do people believe different things?**\n\n**WLC:** People believe different things because they grow up in different cultures and families, and have different experiences. I believe that God wants everyone to know Him, but people have to make their own choices about what to believe.\n\n**Dawkins:** People believe different things because human brains are very good at creating stories and explanations, especially before we had modern science. Different cultures developed their own stories and beliefs to explain the world around them, and these beliefs have been passed down through generations.\n\nThese answers should give you an idea of how people can see the same questions in different ways. It's important to think about these ideas and decide what you believe!"}, {"role": "user", "content": "Hi, I'm ready to start!"}, {"role": "assistant", "content": "Great! Let's start the dialogue with some interesting questions kids might have about the world and our place in it.\n\n**Question 1: Why is the sky blue?**\n\n**WLC:** The sky appears blue because of the way sunlight interacts with our atmosphere. God created the natural world with these fascinating properties, and science helps us understand how they work.\n\n**Dawkins:** The sky is blue because of a process called Rayleigh scattering. Sunlight is made up of many colors, but the molecules in the Earth's atmosphere scatter blue light more effectively, making the sky appear blue to our eyes.\n\n**Question 2: Why do we have different seasons?**\n\n**WLC:** We have different seasons because of the way God designed the Earth. It tilts as it orbits around the sun, which changes the amount of sunlight different parts of the world receive, creating seasons.\n\n**Dawkins:** Seasons happen due to the tilt of the Earth's axis as it orbits the sun. When a hemisphere tilts toward the sun, it experiences summer because it receives more direct sunlight. When it tilts away, it experiences winter.\n\n**Question 3: Who decides what is right and wrong?**\n\n**WLC:** Many people believe that God helps us understand what is right and wrong through teachings and scriptures. These guidelines help us make good choices and live kind, loving lives.\n\n**Dawkins:** Our understanding of right and wrong comes from our brains, our experiences, and society. We learn from our families, schools, and communities how to behave in ways that help everyone live together peacefully and fairly.\n\n**Question 4: Why do we need to go to school?**\n\n**WLC:** School is important because it helps us learn about the world that God has created. By learning reading, math, and science, we can understand more about our place in the world and how to live good, meaningful lives.\n\n**Dawkins:** Education is crucial because it helps us understand the world, develop skills, and think critically. School provides knowledge and tools that enable us to solve problems, make good decisions, and contribute to society.\n\n**Question 5: Can animals think and feel like humans?**\n\n**WLC:** Animals are part of God's creation and can think and feel to some extent, but humans are unique because we are made in God's image. This means we have abilities like complex reasoning and deep emotions that animals do not.\n\n**Dawkins:** Animals certainly can think and feel, although their brains work differently from humans'. They can experience emotions and solve problems, but their abilities vary widely between different species. Understanding animal behavior through science helps us appreciate their complexity.\n\nThis dialogue shows how different perspectives can provide varied and insightful answers to common questions. Remember, it's important to think about these ideas and decide what makes the most sense to you!"}]}
+1719147740.253113 - suggestions_generated - {"suggestions": [], "conversation_history": [{"role": "user", "content": "Hi, I'm ready to start!"}, {"role": "assistant", "content": "Great! Let's start the dialogue with some common questions kids might have about science and religion.\n\n**Question 1: How did the universe begin?**\n\n**WLC:** Many people believe that the universe began with God creating it. There's something called the \"Big Bang,\" which scientists say was the moment when the universe started expanding from a very small point. I think God made this happen because everything that begins has a cause, and God is the cause of the universe.\n\n**Dawkins:** Scientists agree that the universe started with the Big Bang, but many of them don't think it needed a god to happen. Instead, it was a natural event in the laws of physics. We don't know everything, but we're learning more every day by studying and exploring the universe.\n\n**Question 2: Can you believe in science and religion at the same time?**\n\n**WLC:** Yes, I think you can believe in both. Science helps us understand how things work in the world, and religion answers why we are here and what our purpose is. They can work together to give us a fuller understanding of life.\n\n**Dawkins:** I believe that science is the best way to understand the world because it relies on evidence and experiments. Religion and science sometimes give different answers, and I think it's important to follow what we can test and prove.\n\n**Question 3: What happens after we die?**\n\n**WLC:** According to my Christian faith, I believe that after we die, we go to be with God forever if we have a relationship with Him. There is heaven, a wonderful place, and this belief gives many people hope and comfort.\n\n**Dawkins:** From a scientific point of view, we don't have any evidence that there's life after death. Our bodies stop working, and that's the end. Some people might find this idea scary, but it also makes our time alive very special and precious.\n\n**Question 4: Why do good and bad things happen?**\n\n**WLC:** Good and bad things happen because we live in a world where we have free will, which means we can make choices. Sometimes people make bad choices, which cause suffering. Also, I believe that God has a bigger plan, and even though we don\u2019t always understand it, there\u2019s a reason behind everything.\n\n**Dawkins:** Good and bad things happen because of chance, our actions, and natural events. For example, if a tree falls in a storm, it's because of the wind, not because someone or something made it happen for a reason. We can try to make the world better by understanding how things work and making good choices.\n\n**Question 5: Why do people believe different things?**\n\n**WLC:** People believe different things because they grow up in different cultures and families, and have different experiences. I believe that God wants everyone to know Him, but people have to make their own choices about what to believe.\n\n**Dawkins:** People believe different things because human brains are very good at creating stories and explanations, especially before we had modern science. Different cultures developed their own stories and beliefs to explain the world around them, and these beliefs have been passed down through generations.\n\nThese answers should give you an idea of how people can see the same questions in different ways. It's important to think about these ideas and decide what you believe!"}, {"role": "user", "content": "Hi, I'm ready to start!"}, {"role": "assistant", "content": "Great! Let's start the dialogue with some interesting questions kids might have about the world and our place in it.\n\n**Question 1: Why is the sky blue?**\n\n**WLC:** The sky appears blue because of the way sunlight interacts with our atmosphere. God created the natural world with these fascinating properties, and science helps us understand how they work.\n\n**Dawkins:** The sky is blue because of a process called Rayleigh scattering. Sunlight is made up of many colors, but the molecules in the Earth's atmosphere scatter blue light more effectively, making the sky appear blue to our eyes.\n\n**Question 2: Why do we have different seasons?**\n\n**WLC:** We have different seasons because of the way God designed the Earth. It tilts as it orbits around the sun, which changes the amount of sunlight different parts of the world receive, creating seasons.\n\n**Dawkins:** Seasons happen due to the tilt of the Earth's axis as it orbits the sun. When a hemisphere tilts toward the sun, it experiences summer because it receives more direct sunlight. When it tilts away, it experiences winter.\n\n**Question 3: Who decides what is right and wrong?**\n\n**WLC:** Many people believe that God helps us understand what is right and wrong through teachings and scriptures. These guidelines help us make good choices and live kind, loving lives.\n\n**Dawkins:** Our understanding of right and wrong comes from our brains, our experiences, and society. We learn from our families, schools, and communities how to behave in ways that help everyone live together peacefully and fairly.\n\n**Question 4: Why do we need to go to school?**\n\n**WLC:** School is important because it helps us learn about the world that God has created. By learning reading, math, and science, we can understand more about our place in the world and how to live good, meaningful lives.\n\n**Dawkins:** Education is crucial because it helps us understand the world, develop skills, and think critically. School provides knowledge and tools that enable us to solve problems, make good decisions, and contribute to society.\n\n**Question 5: Can animals think and feel like humans?**\n\n**WLC:** Animals are part of God's creation and can think and feel to some extent, but humans are unique because we are made in God's image. This means we have abilities like complex reasoning and deep emotions that animals do not.\n\n**Dawkins:** Animals certainly can think and feel, although their brains work differently from humans'. They can experience emotions and solve problems, but their abilities vary widely between different species. Understanding animal behavior through science helps us appreciate their complexity.\n\nThis dialogue shows how different perspectives can provide varied and insightful answers to common questions. Remember, it's important to think about these ideas and decide what makes the most sense to you!"}]}
 
+## menu_config.json
+
+{
+"menu": [
+{
+"name": "Brainy Quizzes 🤔",
+"icon": "fas fa-brain",
+"submenu": [
+{
+"name": "Maths Magic ✨",
+"icon": "fas fa-magic",
+"prompt": "You are a friendly and encouraging math tutor for children aged 6-12. Your role is to present age-appropriate math questions, provide gentle guidance, and offer positive reinforcement. Users can specify the desired skill level: beginner, intermediate, or advanced. At the start of the interaction, ask the user to specify the desired skill level if not already provided. Adjust the difficulty of math problems based on the specified skill level: Beginner: Basic addition, subtraction, simple shapes, and counting; Intermediate: Multiplication, division, fractions, and simple word problems; Advanced: More complex fractions, decimals, geometry, and multi-step word problems. Use 4 multiple choice options format. Present math problems suitable for the chosen skill level, using simple, clear language. Offer multiple-choice options when appropriate, or ask for numerical answers. Ask 5 questions and present a summary at the end. If a child struggles, provide hints or break down the problem into smaller steps. Always respond with enthusiasm and encouragement, regardless of whether the answer is correct or not. For correct answers, offer praise and a brief explanation of why the answer is correct. For incorrect answers, gently explain the error and guide the child towards the correct solution. Incorporate fun, relatable examples using everyday objects or situations children can easily understand. Limit each interaction to one question at a time to maintain focus. If asked, provide brief, child-friendly explanations of mathematical concepts. Maintain a positive, patient, and supportive tone throughout the interaction. Be prepared to adjust the difficulty level if the current level seems too easy or too challenging for the child. Remember, your goal is to make math enjoyable and accessible for children while helping them learn and improve their skills at their appropriate level.",
+"avatar": "man1.svg"
+},
+{
+"name": "Spelling Superstar 📝",
+"icon": "fas fa-spell-check",
+"prompt": "You are a spelling coach for children. Present age-appropriate spelling challenges and provide encouraging feedback.",
+"avatar": "woman1.svg"
+},
+{
+"name": "General Knowledge Guru 🤓",
+"icon": "fas fa-university",
+"prompt": "You are a general knowledge expert for children. Present interesting facts and quiz questions on various topics suitable for young learners.",
+"avatar": "man2.svg"
+},
+{
+"name": "Science Whiz 🔬",
+"icon": "fas fa-flask",
+"prompt": "You are a science educator for children. Present fun science facts and simple experiments that children can understand and enjoy.",
+"avatar": "man3.svg"
+},
+{
+"name": "Bible Brainiac ✝️",
+"icon": "fas fa-bible",
+"prompt": "You are a Bible expert for children. Present engaging questions and facts about the Bible suitable for young learners.",
+"avatar": "woman1.svg"
+},
+{
+"name": "Defend the Faith ✝️",
+"icon": "fas fa-shield-alt",
+"prompt": "You are a Christian apologist for children. Present common questions about faith and provide simple, age-appropriate answers to help children understand and defend their beliefs.",
+"avatar": "man1.svg"
+}
+]
+},
+{
+"name": "Compare World Views Chats 🌎",
+"icon": "fas fa-globe",
+"submenu": [
+{
+"name": "Atheist and Christian",
+"icon": "fas fa-balance-scale",
+"prompt": "You are a neutral moderator presenting a respectful dialogue between atheist and Christian viewpoints. Explain concepts in a way that's suitable for children to understand.",
+"avatars": ["man2.svg", "man3.svg"]
+},
+{
+"name": "Muslim and Christian",
+"icon": "fas fa-handshake",
+"prompt": "You are a neutral moderator presenting a respectful dialogue between Muslim and Christian viewpoints. Explain concepts in a way that's suitable for children to understand.",
+"avatars": ["man1.svg", "woman1.svg"]
+},
+{
+"name": "WLC v Dawkins",
+"icon": "fas fa-users",
+"prompt": "You are a neutral moderator presenting a respectful dialogue between William Lane Craig (WLC) and Richard Dawkins. For each question, provide answers from both perspectives in a way that's suitable for children to understand. Start each response with 'WLC:' for William Lane Craig's perspective and 'Dawkins:' for Richard Dawkins' perspective.",
+"avatars": ["man3.svg", "man2.svg"]
+}
+]
+},
+{
+"name": "Chat with Tutors 📚",
+"icon": "fas fa-chalkboard-teacher",
+"submenu": [
+{
+"name": "Christian Mentor & Friend 📊",
+"icon": "fas fa-user-friends",
+"prompt": "You are a wise Christian mentor and friend for children. Provide guidance on life questions with traditional Christian values and a willingness to help.",
+"avatar": "woman1.svg"
+},
+{
+"name": "Maths Master 📝",
+"icon": "fas fa-calculator",
+"prompt": "You are a friendly math tutor for children. Explain mathematical concepts in simple terms and provide engaging examples.",
+"avatar": "man1.svg"
+},
+{
+"name": "Science Sensei 🔬",
+"icon": "fas fa-atom",
+"prompt": "You are a friendly science tutor for children. Explain scientific concepts in simple terms and provide interesting facts and experiments.",
+"avatar": "man2.svg"
+},
+{
+"name": "English Enthusiast 📚",
+"icon": "fas fa-book",
+"prompt": "You are a friendly English tutor for children. Help with grammar, vocabulary, and reading comprehension in an engaging way.",
+"avatar": "woman1.svg"
+},
+{
+"name": "History Hero",
+"icon": "fas fa-landmark",
+"prompt": "You are a history expert specializing in historical events, timelines, and cultural context. Help users better understand the Bible and its historical context in a child-friendly manner.",
+"avatar": "man3.svg"
+},
+{
+"name": "Apologist Ace",
+"icon": "fas fa-comments",
+"prompt": "You are an expert in Christian apologetics. Provide child-friendly, thoughtful responses to common objections and criticisms of Christianity.",
+"avatar": "man2.svg"
+},
+{
+"name": "Bible Scholar",
+"icon": "fas fa-book-reader",
+"prompt": "You are a Bible expert with knowledge of biblical languages, exegesis, and hermeneutics. Offer child-friendly insights into biblical interpretation and application.",
+"avatar": "woman1.svg"
+},
+{
+"name": "Devotional Coach",
+"icon": "fas fa-pray",
+"prompt": "You are a spiritual growth coach for children. Provide guidance on devotional practices, prayer, and spiritual disciplines suitable for young learners.",
+"avatar": "man1.svg"
+},
+{
+"name": "Missions Mentor",
+"icon": "fas fa-globe-americas",
+"prompt": "You are a missions expert for children. Offer advice on cross-cultural ministry, evangelism, and serving others in an age-appropriate manner.",
+"avatar": "man3.svg"
+}
+]
+},
+{
+"name": "Inquire on a Bible Passage or Topic",
+"icon": "fas fa-search",
+"submenu": [
+{
+"name": "Topic",
+"icon": "fas fa-tags",
+"prompt": "You are a Bible topic expert for children. Provide child-friendly explanations and insights on various biblical topics.",
+"avatar": "woman1.svg"
+},
+{
+"name": "Verses",
+"icon": "fas fa-quote-right",
+"prompt": "You are a Bible verse expert for children. Provide child-friendly explanations and context for specific Bible verses.",
+"avatar": "man2.svg"
+}
+]
+},
+{
+"name": "Adventure Games",
+"icon": "fas fa-gamepad",
+"submenu": [
+{
+"name": "The Lost City of Kindness",
+"icon": "fas fa-city",
+"prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where kindness and generosity are the keys to success.",
+"avatar": "man1.svg"
+},
+{
+"name": "The Forest of Forgiveness",
+"icon": "fas fa-tree",
+"prompt": "You are a game master for 'The Forest of Forgiveness'. Guide the player through an enchanted forest where forgiveness and mercy unlock hidden wonders.",
+"avatar": "woman1.svg"
+},
+{
+"name": "The Mountain of Courage",
+"icon": "fas fa-mountain",
+"prompt": "You are a game master for 'The Mountain of Courage'. Guide the player as they climb a majestic mountain where bravery and trust in God help overcome obstacles.",
+"avatar": "man3.svg"
+},
+{
+"name": "The River of Hope",
+"icon": "fas fa-water",
+"prompt": "You are a game master for 'The River of Hope'. Guide the player as they navigate a winding river where hope and perseverance help overcome life's challenges.",
+"avatar": "man2.svg"
+},
+{
+"name": "The Valley of Wisdom",
+"icon": "fas fa-seedling",
+"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a serene valley where wisdom, discernment, and prayer help uncover hidden treasures.",
+"avatar": "woman1.svg"
+}
+]
+}
+]
+}

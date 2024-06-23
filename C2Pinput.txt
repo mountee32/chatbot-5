@@ -9,5 +9,9 @@ this is a chat based website for young christians to explore their fair
 If recommending changes to a specifc file then please give the full file contents and not just the changes, there is no need to also describe the changes unless there is a problem I need to be aware of. 
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
------
-add avatar
+----- Instructions -----------
+add avatar next to the chat messages like the mock up image.  the avatar svg files are held in the assets folder and the name of the one to use in the menu config file e.g. "name": "The Valley of Wisdom",
+"icon": "fas fa-seedling",
+"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a serene valley where wisdom, discernment, and prayer help uncover hidden treasures.",
+"avatar": "woman1.svg"
+----------------

@@ -63,6 +63,7 @@
         let currentMenu = 'main';
         let menuConfig;
         let currentSubmenu;
+        let currentAvatar = '';
 
         function replaceEmoticons(text) {
             return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
@@ -76,6 +77,16 @@
         function addMessage(role, content) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}-message`;
+            
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'avatar';
+            if (role === 'user') {
+                avatarDiv.innerHTML = '<img src="/static/assets/user-avatar.svg" alt="User">';
+            } else {
+                avatarDiv.innerHTML = `<img src="/static/assets/${currentAvatar}" alt="Assistant">`;
+            }
+            messageDiv.appendChild(avatarDiv);
+
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             contentDiv.innerHTML = renderContent(content);
@@ -206,6 +217,7 @@
                 submenuItem.className = 'submenu-item';
                 submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
                 submenuItem.addEventListener('click', () => {
+                    currentAvatar = subItem.avatar || 'default-avatar.svg';
                     fetch('/set_prompt', {
                         method: 'POST',
                         headers: {
