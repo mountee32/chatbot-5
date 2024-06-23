@@ -214,3 +214,17 @@ body, html {
 	cursor: pointer;
 	margin-right: 10px;
 }
+.message.assistant-message {
+	display: flex;
+	justify-content: flex-start;
+	align-items: flex-start;
+}
+
+.message.assistant-message .avatar {
+	order: 2;
+	margin-left: 10px;
+}
+
+.message.assistant-message .message-content {
+	order: 1;
+}
