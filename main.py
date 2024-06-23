@@ -62,7 +62,14 @@ def chat():
 @app.route('/suggestions', methods=['GET'])
 def get_suggestions():
     global conversation_history
-    suggestions = generate_suggestions(conversation_history, current_prompt)
+    suggestions_data = generate_suggestions(conversation_history, current_prompt)
+
+    # Check if suggestions_data is a dictionary with a 'suggestions' key
+    if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+        suggestions = suggestions_data['suggestions']
+    else:
+        suggestions = suggestions_data  # Assume it's already the correct format
+
     log_event('suggestions_generated', {
         'suggestions': suggestions,
         'conversation_history': conversation_history

@@ -3,9 +3,13 @@ import json
 import requests
 import logging
 
+# Set up logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4o"
+MODEL = "openai/gpt-4"
 
 def generate_response(messages, current_prompt):
 		headers = {
@@ -46,55 +50,106 @@ def generate_response(messages, current_prompt):
 										continue
 
 def generate_suggestions(messages, current_prompt):
-	headers = {
-			"Authorization": f"Bearer {OPENROUTER_API_KEY}",
-			"HTTP-Referer": "https://your-app-url.com",
-			"X-Title": "OpenRouter Chatbot",
-			"Content-Type": "application/json"
-	}
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
 
-	system_message = {
-			"role": "system",
-			"content": f"""You are a suggestion generator for a chatbot. The current context is:
+		schema = {
+				"type": "object",
+				"properties": {
+						"suggestions": {
+								"type": "array",
+								"items": {
+										"type": "object",
+										"properties": {
+												"text": {"type": "string"},
+												"icon": {"type": "string"}
+										},
+										"required": ["text", "icon"]
+								}
+						}
+				},
+				"required": ["suggestions"]
+		}
 
-			{current_prompt}
+		system_message = {
+				"role": "system",
+				"content": f"""You are a suggestion generator for a chatbot. The current context is:
 
-			Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. Return the suggestions as a JSON array of objects, where each object has a 'text' field for the suggestion text and an 'icon' field for an appropriate FontAwesome icon class. Use 'fas fa-' prefix for FontAwesome icons."""
-	}
+				{current_prompt}
 
-	# Use only the last message from the chat history
-	last_message = messages[-1] if messages else {"role": "user", "content": ""}
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. 
 
-	full_messages = [system_message, last_message]
+				Provide the suggestions in JSON format according to the following schema:
 
-	data = {
-			"model": MODEL,
-			"messages": full_messages,
-			"max_tokens": 250
-	}
+				{json.dumps(schema, indent=2)}
 
-	try:
-			response = requests.post(API_URL, headers=headers, json=data)
-			response.raise_for_status()
+				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
+		}
 
-			response_json = response.json()
-			content = response_json['choices'][0]['message']['content']
+		# Use only the last message from the chat history
+		last_message = messages[-1] if messages else {"role": "user", "content": ""}
 
-			try:
-					suggestions_json = json.loads(content)
-					return suggestions_json
-			except json.JSONDecodeError:
-					logging.warning(f"Failed to parse suggestions as JSON. Using fallback method.")
-					fallback_suggestion = {
-							"text": content[:50] + "..." if len(content) > 50 else content,
-							"icon": "fas fa-comment"
-					}
-					return [fallback_suggestion]
+		full_messages = [system_message, last_message]
 
-	except requests.RequestException as e:
-			logging.error(f"Error making request to API: {str(e)}")
-			return []
+		data = {
+				"model": MODEL,
+				"messages": full_messages,
+				"max_tokens": 250
+		}
 
-	except (KeyError, IndexError) as e:
-			logging.error(f"Error parsing API response: {str(e)}")
-			return []
+		logger.info("Sending request to API")
+
+		try:
+				response = requests.post(API_URL, headers=headers, json=data)
+				response.raise_for_status()
+
+				response_json = response.json()
+				logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
+
+				if 'choices' not in response_json:
+						logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
+						return []
+
+				content = response_json['choices'][0]['message']['content']
+				logger.info(f"Content from API: {content}")
+
+				try:
+						suggestions_data = json.loads(content)
+						if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+								suggestions = suggestions_data['suggestions']
+						elif isinstance(suggestions_data, list):
+								suggestions = suggestions_data
+						else:
+								logger.warning(f"Unexpected content structure. Content: {content}")
+								return []
+
+						logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+						return suggestions
+				except json.JSONDecodeError:
+						logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
+						return []
+
+		except requests.RequestException as e:
+				logger.error(f"Error making request to API: {str(e)}")
+				return []
+
+		except (KeyError, IndexError, TypeError) as e:
+				logger.error(f"Error parsing API response: {str(e)}")
+				logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
+				return []
+
+# Example usage
+if __name__ == "__main__":
+		sample_messages = [
+				{"role": "user", "content": "Hi, I'm ready to start!"},
+				{"role": "assistant", "content": "Great! What would you like to learn about today?"}
+		]
+		sample_prompt = "You are a helpful assistant for a learning platform."
+
+		logger.info("Generating suggestions...")
+		suggestions = generate_suggestions(sample_messages, sample_prompt)
+		logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")
