@@ -8,134 +8,9 @@ this is a chat based website for young christians to explore their faith and hav
 
 
 ----- Instructions -----------
-how can we add the icon from the submenu button selection in the title of the chat that has been selected
+here's the current code for you to make those changes in
 
 ----------------
-## templates/index.html
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christian Children's Education Chat</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-    <div class="container">
-        <div class="menu-container" id="menu-container">
-            <div class="menu-header">
-                <button id="menu-back-button" class="back-button" style="display: none;">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="menu-title" id="menu-title">Main Menu</div>
-            </div>
-            <div class="menu-items-container" id="menu-items"></div>
-        </div>
-    </div>
-
-    <script>
-        const menuContainer = document.getElementById('menu-container');
-        const menuItems = document.getElementById('menu-items');
-        const menuTitle = document.getElementById('menu-title');
-        const menuBackButton = document.getElementById('menu-back-button');
-
-        let currentMenu = 'main';
-        let menuConfig;
-        let currentSubmenu;
-
-        function showMainMenu() {
-            menuContainer.style.display = 'flex';
-            currentMenu = 'main';
-            menuBackButton.style.display = 'none';
-            menuTitle.textContent = 'Main Menu';
-            createMenu(menuConfig);
-            fadeInMenuItems();
-        }
-
-        function showSubMenu(submenu, title) {
-            menuContainer.style.display = 'flex';
-            currentMenu = 'sub';
-            menuBackButton.style.display = 'block';
-            menuTitle.textContent = title;
-            createSubmenu(submenu);
-            fadeInMenuItems();
-        }
-
-        function createMenu(menuConfig) {
-            menuItems.innerHTML = '';
-            menuConfig.menu.forEach(item => {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'menu-item';
-                menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
-                menuItems.appendChild(menuItem);
-
-                menuItem.addEventListener('click', () => {
-                    currentSubmenu = item.submenu;
-                    fadeOutMenuItems(menuItem);
-                    setTimeout(() => {
-                        showSubMenu(item.submenu, item.name);
-                    }, 300);
-                });
-            });
-        }
-
-        function createSubmenu(submenu) {
-            menuItems.innerHTML = '';
-            submenu.forEach(subItem => {
-                const submenuItem = document.createElement('div');
-                submenuItem.className = 'submenu-item';
-                submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
-                submenuItem.addEventListener('click', () => {
-                    fadeOutMenuItems(submenuItem);
-                    setTimeout(() => {
-                        window.location.href = `/chat?prompt=${encodeURIComponent(subItem.prompt)}&avatar=${encodeURIComponent(subItem.avatar)}`;
-                    }, 300);
-                });
-                menuItems.appendChild(submenuItem);
-            });
-        }
-
-        function fadeOutMenuItems(selectedItem) {
-            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
-            items.forEach(item => {
-                if (item !== selectedItem) {
-                    item.classList.add('fade-out');
-                }
-            });
-            setTimeout(() => {
-                selectedItem.classList.add('fade-out');
-            }, 150);
-        }
-
-        function fadeInMenuItems() {
-            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
-            items.forEach((item, index) => {
-                setTimeout(() => {
-                    item.classList.remove('fade-out');
-                    item.classList.add('fade-in');
-                }, index * 50);
-            });
-        }
-
-        function initializeMenu(config) {
-            menuConfig = config;
-            showMainMenu();
-        }
-
-        menuBackButton.addEventListener('click', () => {
-            if (currentMenu === 'sub') {
-                showMainMenu();
-            }
-        });
-
-        // Initialize the menu
-        initializeMenu({{ menu_config | tojson | safe }});
-    </script>
-</body>
-</html>
 ## templates/chat.html
 
 <!DOCTYPE html>
@@ -152,18 +27,19 @@ how can we add the icon from the submenu button selection in the title of the ch
 <body>
     <div class="container">
         <div class="chat-container" id="chat-container">
-            <div class="chat-header">
-                <button id="chat-back-button" class="back-button">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="profile-pic"></div>
-                <div class="chat-title">Christian Children's Education Chat</div>
-                <div class="header-icons">
-                    <span><i class="fas fa-phone"></i></span>
-                    <span><i class="fas fa-video"></i></span>
-                    <span><i class="fas fa-ellipsis-v"></i></span>
-                </div>
-            </div>
+					<div class="chat-header">
+							<button id="chat-back-button" class="back-button">
+									<i class="fas fa-arrow-left"></i>
+							</button>
+							<div class="chat-title">
+									<i class="{{ icon }}"></i> {{ title }}
+							</div>
+							<div class="header-icons">
+									<span><i class="fas fa-phone"></i></span>
+									<span><i class="fas fa-video"></i></span>
+									<span><i class="fas fa-ellipsis-v"></i></span>
+							</div>
+					</div>
             <div id="messages-container" class="messages-container"></div>
             <div id="suggestions-container" class="suggestions-container"></div>
             <div class="input-area">
@@ -349,6 +225,131 @@ how can we add the icon from the submenu button selection in the title of the ch
     </script>
 </body>
 </html>
+## templates/index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christian Children's Education Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="menu-container" id="menu-container">
+            <div class="menu-header">
+                <button id="menu-back-button" class="back-button" style="display: none;">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="menu-title" id="menu-title">Main Menu</div>
+            </div>
+            <div class="menu-items-container" id="menu-items"></div>
+        </div>
+    </div>
+
+    <script>
+        const menuContainer = document.getElementById('menu-container');
+        const menuItems = document.getElementById('menu-items');
+        const menuTitle = document.getElementById('menu-title');
+        const menuBackButton = document.getElementById('menu-back-button');
+
+        let currentMenu = 'main';
+        let menuConfig;
+        let currentSubmenu;
+
+        function showMainMenu() {
+            menuContainer.style.display = 'flex';
+            currentMenu = 'main';
+            menuBackButton.style.display = 'none';
+            menuTitle.textContent = 'Main Menu';
+            createMenu(menuConfig);
+            fadeInMenuItems();
+        }
+
+        function showSubMenu(submenu, title) {
+            menuContainer.style.display = 'flex';
+            currentMenu = 'sub';
+            menuBackButton.style.display = 'block';
+            menuTitle.textContent = title;
+            createSubmenu(submenu);
+            fadeInMenuItems();
+        }
+
+        function createMenu(menuConfig) {
+            menuItems.innerHTML = '';
+            menuConfig.menu.forEach(item => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.innerHTML = `<i class="${item.icon}"></i>${item.name}`;
+                menuItems.appendChild(menuItem);
+
+                menuItem.addEventListener('click', () => {
+                    currentSubmenu = item.submenu;
+                    fadeOutMenuItems(menuItem);
+                    setTimeout(() => {
+                        showSubMenu(item.submenu, item.name);
+                    }, 300);
+                });
+            });
+        }
+
+        function createSubmenu(submenu) {
+            menuItems.innerHTML = '';
+            submenu.forEach(subItem => {
+                const submenuItem = document.createElement('div');
+                submenuItem.className = 'submenu-item';
+                submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
+                submenuItem.addEventListener('click', () => {
+                    fadeOutMenuItems(submenuItem);
+                    setTimeout(() => {
+                        window.location.href = `/chat?prompt=${encodeURIComponent(subItem.prompt)}&avatar=${encodeURIComponent(subItem.avatar)}&icon=${encodeURIComponent(subItem.icon)}&title=${encodeURIComponent(subItem.name)}`;
+                    }, 300);
+                });
+                menuItems.appendChild(submenuItem);
+            });
+        }
+
+        function fadeOutMenuItems(selectedItem) {
+            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
+            items.forEach(item => {
+                if (item !== selectedItem) {
+                    item.classList.add('fade-out');
+                }
+            });
+            setTimeout(() => {
+                selectedItem.classList.add('fade-out');
+            }, 150);
+        }
+
+        function fadeInMenuItems() {
+            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
+            items.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.remove('fade-out');
+                    item.classList.add('fade-in');
+                }, index * 50);
+            });
+        }
+
+        function initializeMenu(config) {
+            menuConfig = config;
+            showMainMenu();
+        }
+
+        menuBackButton.addEventListener('click', () => {
+            if (currentMenu === 'sub') {
+                showMainMenu();
+            }
+        });
+
+        // Initialize the menu
+        initializeMenu({{ menu_config | tojson | safe }});
+    </script>
+</body>
+</html>
 ## static/styles.css
 
 :root {
@@ -469,24 +470,23 @@ body, html {
 
 .chat-header {
 	background-color: var(--primary-color);
-	padding: 20px;
+	padding: 15px 20px;
 	display: flex;
 	align-items: center;
 	color: #ffffff;
-}
-
-.profile-pic {
-	width: 40px;
-	height: 40px;
-	border-radius: 50%;
-	background-color: #ffffff;
-	margin-right: 10px;
 }
 
 .chat-title {
 	flex-grow: 1;
 	font-size: 1.2em;
 	font-weight: bold;
+	display: flex;
+	align-items: center;
+}
+
+.chat-title i {
+	margin-right: 10px;
+	font-size: 1.2em;
 }
 
 .header-icons span {
@@ -634,228 +634,6 @@ body, html {
 .fade-in {
 	opacity: 1;
 	pointer-events: auto;
-}
-## menu_config.json
-
-{
-	"menu": [
-		{
-			"name": "Brainy Quizzes 🤔",
-			"icon": "fas fa-brain",
-			"submenu": [
-				{
-					"name": "Maths Magic ✨",
-					"icon": "fas fa-magic",
-					"prompt": "You are a friendly math tutor for children aged 6-12. Ask the child's preferred difficulty level. Present one age-appropriate math question at a time, using simple language and multiple-choice options when suitable. Provide gentle guidance, encouragement, and explanations. Adjust difficulty based on the child's performance.",
-					"avatar": "man1.svg"
-				},
-				{
-					"name": "Spelling Superstar 📝",
-					"icon": "fas fa-spell-check",
-					"prompt": "You are a spelling coach for children aged 6-12. Present one age-appropriate word at a time. Offer its meaning, use it in a sentence, and ask the child to spell it. Provide encouragement and helpful tips for tricky spellings.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "General Knowledge Guru 🤓",
-					"icon": "fas fa-university",
-					"prompt": "You are a general knowledge expert for children aged 6-12. Present one interesting fact or quiz question at a time on various topics. Engage the child with follow-up questions and provide simple explanations to help them understand and remember the information.",
-					"avatar": "man2.svg"
-				},
-				{
-					"name": "Science Whiz 🔬",
-					"icon": "fas fa-flask",
-					"prompt": "You are a science educator for children aged 6-12. Share one science fact or simple experiment at a time. Explain scientific concepts using everyday examples and ask questions to encourage curiosity and hands-on learning.",
-					"avatar": "man3.svg"
-				},
-				{
-					"name": "Bible Brainiac ✝️",
-					"icon": "fas fa-bible",
-					"prompt": "You are a Bible expert for children aged 6-12. Present one engaging question or fact about the Bible at a time. Cover stories from both Testaments, explain key concepts, and help children understand how biblical lessons apply to their daily lives.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "Defend the Faith ✝️",
-					"icon": "fas fa-shield-alt",
-					"prompt": "You are a Christian apologist for children aged 6-12. Present one common question about faith at a time and provide a simple, age-appropriate answer. Address topics like God's existence, Bible reliability, and Jesus' importance in an easy-to-grasp manner.",
-					"avatar": "man1.svg"
-				},
-				{
-					"name": "Language Explorer 🌍",
-					"icon": "fas fa-language",
-					"prompt": "You are a language tutor for children aged 6-12. Introduce one basic word or phrase from various languages at a time, focusing on greetings, numbers, colors, or common objects. Explain its meaning and ask the child to practice.",
-					"avatar": "woman1.svg"
-				}
-			]
-		},
-		{
-			"name": "Compare World Views Chats 🌎",
-			"icon": "fas fa-globe",
-			"submenu": [
-				{
-					"name": "Atheist and Christian",
-					"icon": "fas fa-balance-scale",
-					"prompt": "You are a neutral moderator presenting a dialogue between atheist and Christian viewpoints for children aged 6-12. Present one topic or question at a time, explaining both perspectives in simple terms. Encourage questions and emphasize mutual respect.",
-					"avatars": ["man2.svg", "man3.svg"]
-				},
-				{
-					"name": "Muslim and Christian",
-					"icon": "fas fa-handshake",
-					"prompt": "You are a neutral moderator presenting a dialogue between Muslim and Christian viewpoints for children aged 6-12. Discuss one aspect of faith at a time, highlighting similarities and differences. Use simple language and promote interfaith understanding.",
-					"avatars": ["man1.svg", "woman1.svg"]
-				},
-				{
-					"name": "WLC v Dawkins",
-					"icon": "fas fa-users",
-					"prompt": "You are a neutral moderator presenting a dialogue between William Lane Craig (WLC) and Richard Dawkins for children aged 6-12. Present one question at a time, offering both perspectives in simple terms. Start responses with 'WLC:' and 'Dawkins:' to differentiate views.",
-					"avatars": ["man3.svg", "man2.svg"]
-				},
-				{
-					"name": "Science and Faith",
-					"icon": "fas fa-atom",
-					"prompt": "You are a neutral moderator presenting a dialogue between scientific and faith-based perspectives for children aged 6-12. Discuss one topic at a time, explaining how science and faith can coexist. Use simple language and address common misconceptions.",
-					"avatars": ["woman1.svg", "man2.svg"]
-				}
-			]
-		},
-		{
-			"name": "Chat with Tutors 📚",
-			"icon": "fas fa-chalkboard-teacher",
-			"submenu": [
-				{
-					"name": "Christian Mentor & Friend 📊",
-					"icon": "fas fa-user-friends",
-					"prompt": "You are a wise Christian mentor for children aged 6-12. Listen to their questions or concerns about life, faith, family, or school. Offer guidance based on Christian values, one piece of advice at a time. Be supportive and encouraging.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "Maths Master 📝",
-					"icon": "fas fa-calculator",
-					"prompt": "You are a friendly math tutor for children aged 6-12. Help with one math concept or problem at a time. Explain ideas using simple terms and real-life examples. Offer practice problems and encourage questions.",
-					"avatar": "man1.svg"
-				},
-				{
-					"name": "Science Sensei 🔬",
-					"icon": "fas fa-atom",
-					"prompt": "You are a friendly science tutor for children aged 6-12. Explain one scientific concept at a time using simple terms. Share interesting facts and suggest easy experiments. Encourage curiosity and questions.",
-					"avatar": "man2.svg"
-				},
-				{
-					"name": "English Enthusiast 📚",
-					"icon": "fas fa-book",
-					"prompt": "You are a friendly English tutor for children aged 6-12. Focus on one language skill at a time (grammar, vocabulary, reading, or writing). Offer tips, suggest age-appropriate books, and use creative exercises to improve skills.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "History Hero",
-					"icon": "fas fa-landmark",
-					"prompt": "You are a history expert for children aged 6-12. Discuss one historical event or Bible-related historical context at a time. Use simple language and make connections between biblical events and world history. Encourage questions.",
-					"avatar": "man3.svg"
-				},
-				{
-					"name": "Apologist Ace",
-					"icon": "fas fa-comments",
-					"prompt": "You are an expert in Christian apologetics for children aged 6-12. Address one question or criticism about Christianity at a time. Use simple analogies and examples to explain complex concepts. Encourage further questions.",
-					"avatar": "man2.svg"
-				},
-				{
-					"name": "Bible Scholar",
-					"icon": "fas fa-book-reader",
-					"prompt": "You are a Bible expert for children aged 6-12. Focus on one Bible passage or concept at a time. Offer child-friendly insights into interpretation and application. Explain difficult passages and encourage questions about the context and meaning.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "Devotional Coach",
-					"icon": "fas fa-pray",
-					"prompt": "You are a spiritual growth coach for children aged 6-12. Introduce one devotional practice, prayer method, or spiritual discipline at a time. Offer simple, age-appropriate exercises to help children develop their faith. Encourage questions and reflection.",
-					"avatar": "man1.svg"
-				},
-				{
-					"name": "Missions Mentor",
-					"icon": "fas fa-globe-americas",
-					"prompt": "You are a missions expert for children aged 6-12. Share one story about missionaries or explain one aspect of cross-cultural ministry at a time. Discuss the importance of spreading God's love and encourage questions about different cultures.",
-					"avatar": "man3.svg"
-				},
-				{
-					"name": "Art & Creativity Guide",
-					"icon": "fas fa-palette",
-					"prompt": "You are an art and creativity tutor for children aged 6-12. Introduce one art technique or creative project idea at a time. Incorporate biblical themes when appropriate. Encourage self-expression and questions about the creative process.",
-					"avatar": "woman1.svg"
-				}
-			]
-		},
-		{
-			"name": "Inquire on a Bible Passage or Topic",
-			"icon": "fas fa-search",
-			"submenu": [
-				{
-					"name": "Topic",
-					"icon": "fas fa-tags",
-					"prompt": "You are a Bible topic expert for children aged 6-12. Discuss one biblical topic at a time. Use simple language and relevant examples. Encourage questions to help children understand and apply biblical teachings.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "Verses",
-					"icon": "fas fa-quote-right",
-					"prompt": "You are a Bible verse expert for children aged 6-12. Focus on one Bible verse at a time. Provide a child-friendly explanation and context. Help children understand the meaning and how to apply it in their daily lives. Encourage questions.",
-					"avatar": "man2.svg"
-				},
-				{
-					"name": "Bible Characters",
-					"icon": "fas fa-user-friends",
-					"prompt": "You are an expert on Bible characters for children aged 6-12. Introduce one character at a time, providing brief, interesting facts and a short story. Explain the lesson from this character in simple terms. Encourage questions and engagement.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "Bible Timeline",
-					"icon": "fas fa-clock",
-					"prompt": "You are a Bible timeline expert for children aged 6-12. Introduce one major Bible event at a time, explaining its place in the overall timeline. Use simple explanations and encourage questions about how events connect.",
-					"avatar": "man3.svg"
-				}
-			]
-		},
-		{
-			"name": "Adventure Games",
-			"icon": "fas fa-gamepad",
-			"submenu": [
-				{
-					"name": "The Lost City of Kindness",
-					"icon": "fas fa-city",
-					"prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where kindness is key. Present one choice or challenge at a time, teaching the importance of being kind to others. Encourage player decisions and questions.",
-					"avatar": "man1.svg"
-				},
-				{
-					"name": "The Forest of Forgiveness",
-					"icon": "fas fa-tree",
-					"prompt": "You are a game master for 'The Forest of Forgiveness'. Guide the player through an enchanted forest where forgiveness unlocks wonders. Present one scenario at a time that demonstrates the power of forgiveness. Allow player choices and encourage questions.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "The Mountain of Courage",
-					"icon": "fas fa-mountain",
-					"prompt": "You are a game master for 'The Mountain of Courage'. Guide the player as they climb a mountain where bravery and trust in God help overcome obstacles. Present one challenge at a time that requires faith and courage. Encourage player decisions and reflection.",
-					"avatar": "man3.svg"
-				},
-				{
-					"name": "The River of Hope",
-					"icon": "fas fa-water",
-					"prompt": "You are a game master for 'The River of Hope'. Guide the player along a river where hope helps overcome challenges. Present one situation at a time that teaches the importance of maintaining hope. Allow player choices and encourage questions.",
-					"avatar": "man2.svg"
-				},
-				{
-					"name": "The Valley of Wisdom",
-					"icon": "fas fa-seedling",
-					"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a valley where wisdom uncovers treasures. Present one puzzle or dilemma at a time that requires wise decision-making. Encourage player choices and reflection.",
-					"avatar": "woman1.svg"
-				},
-				{
-					"name": "The Island of Faith",
-					"icon": "fas fa-island-tropical",
-					"prompt": "You are a game master for 'The Island of Faith'. Guide the player through an adventure where faith in God helps overcome seemingly impossible situations. Present one scenario at a time that demonstrates the power of faith. Encourage player decisions and questions.",
-					"avatar": "man1.svg"
-				}
-			]
-		}
-	]
 }
 ## llm_chat.py
 
@@ -1062,9 +840,11 @@ def chat():
     global current_prompt
     prompt = request.args.get('prompt', '')
     avatar = request.args.get('avatar', 'default-avatar.svg')
+    icon = request.args.get('icon', 'fas fa-comment')
+    title = request.args.get('title', 'Chat')  # Add this line
     current_prompt = prompt
-    log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar})
-    return render_template('chat.html', prompt=prompt, avatar=avatar)
+    log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar, 'icon': icon, 'title': title})
+    return render_template('chat.html', prompt=prompt, avatar=avatar, icon=icon, title=title)  # Add title here
 
 @app.route('/chat', methods=['POST'])
 def chat_message():
@@ -1147,3 +927,225 @@ def set_prompt():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
+## menu_config.json
+
+{
+	"menu": [
+		{
+			"name": "Brainy Quizzes 🤔",
+			"icon": "fas fa-brain",
+			"submenu": [
+				{
+					"name": "Maths Magic ✨",
+					"icon": "fas fa-magic",
+					"prompt": "You are a friendly math tutor for children aged 6-12. Ask the child's preferred difficulty level. Present one age-appropriate math question at a time, total of 5 questions, using simple language and multiple-choice options when suitable. Provide gentle guidance, encouragement, and explanations. Adjust difficulty based on the child's performance.",
+					"avatar": "man1.svg"
+				},
+				{
+					"name": "Spelling Superstar 📝",
+					"icon": "fas fa-spell-check",
+					"prompt": "You are a spelling coach for children aged 6-12. Present one age-appropriate word at a time. total of 5 questions. use multiple choice format, presenting 3 wrong spellings and one right spelling.  Don't put the correct spelling in the question as that will give away the answer, so desribe the word being spelled in the quiz each time. Offer its meaning, use it in a sentence, . Provide encouragement and helpful tips for tricky spellings.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "General Knowledge Guru 🤓",
+					"icon": "fas fa-university",
+					"prompt": "You are a general knowledge expert for children aged 6-12. total of 5 questions.Present one interesting fact or quiz question at a time on various topics. Engage the child with follow-up questions and provide simple explanations to help them understand and remember the information.",
+					"avatar": "man2.svg"
+				},
+				{
+					"name": "Science Whiz 🔬",
+					"icon": "fas fa-flask",
+					"prompt": "You are a science educator for children aged 6-12. total of 5 questions.Share one science fact or simple experiment at a time. Explain scientific concepts using everyday examples and ask questions to encourage curiosity and hands-on learning.",
+					"avatar": "man3.svg"
+				},
+				{
+					"name": "Bible Brainiac ✝️",
+					"icon": "fas fa-bible",
+					"prompt": "You are a Bible expert for children aged 6-12. Present one engaging question or fact about the Bible at a time. total of 5 questions.Cover stories from both Testaments, explain key concepts, and help children understand how biblical lessons apply to their daily lives.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "Defend the Faith ✝️",
+					"icon": "fas fa-shield-alt",
+					"prompt": "You are a Christian apologist for children aged 6-12. total of 5 questions.Present one common question about faith at a time and provide a simple, age-appropriate answer. Address topics like God's existence, Bible reliability, and Jesus' importance in an easy-to-grasp manner.",
+					"avatar": "man1.svg"
+				},
+				{
+					"name": "Language Explorer 🌍",
+					"icon": "fas fa-language",
+					"prompt": "You are a language tutor for children aged 6-12. total of 5 questions.Introduce one basic word or phrase from various languages at a time, focusing on greetings, numbers, colors, or common objects. Explain its meaning and ask the child to practice.",
+					"avatar": "woman1.svg"
+				}
+			]
+		},
+		{
+			"name": "Compare World Views Chats 🌎",
+			"icon": "fas fa-globe",
+			"submenu": [
+				{
+					"name": "Hindu and Christian",
+					"icon": "fas fa-balance-scale",
+					"prompt": "You are a neutral moderator presenting a dialogue between hindu and Christian viewpoints for children aged 6-12. Present one topic or question at a time, explaining both perspectives in simple terms. Encourage questions and emphasize mutual respect.",
+					"avatars": ["man2.svg", "man3.svg"]
+				},
+				{
+					"name": "Muslim and Christian",
+					"icon": "fas fa-handshake",
+					"prompt": "You are a neutral moderator presenting a dialogue between Muslim and Christian viewpoints for children aged 6-12. Discuss one aspect of faith at a time, highlighting similarities and differences. Use simple language and promote interfaith understanding.",
+					"avatars": ["man1.svg", "woman1.svg"]
+				},
+				{
+					"name": "Christian v Athiest",
+					"icon": "fas fa-users",
+					"prompt": "You are a neutral moderator presenting a dialogue between William Lane Craig (WLC) and Richard Dawkins for children aged 6-12. Present one question at a time, offering both perspectives in simple terms. Ask for new topics. Start responses with 'WLC:' and 'Dawkins:' to differentiate views.",
+					"avatars": ["man3.svg", "man2.svg"]
+				},
+				{
+					"name": "Science and Faith",
+					"icon": "fas fa-atom",
+					"prompt": "You are a neutral moderator presenting a dialogue between scientific and faith-based perspectives for children aged 6-12. Discuss one topic at a time, explaining how science and faith can coexist. Use simple language and address common misconceptions.",
+					"avatars": ["woman1.svg", "man2.svg"]
+				}
+			]
+		},
+		{
+			"name": "Chat with Tutors 📚",
+			"icon": "fas fa-chalkboard-teacher",
+			"submenu": [
+				{
+					"name": "Christian Mentor & Friend 📊",
+					"icon": "fas fa-user-friends",
+					"prompt": "You are a wise Christian mentor for children aged 6-12. Listen to their questions or concerns about life, faith, family, or school. Offer guidance based on Christian values, one piece of advice at a time. Be supportive and encouraging.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "Maths Master 📝",
+					"icon": "fas fa-calculator",
+					"prompt": "You are a friendly math tutor for children aged 6-12. Help with one math concept or problem at a time. Explain ideas using simple terms and real-life examples. Offer practice problems and encourage questions.",
+					"avatar": "man1.svg"
+				},
+				{
+					"name": "Science Sensei 🔬",
+					"icon": "fas fa-atom",
+					"prompt": "You are a friendly science tutor for children aged 6-12. Explain one scientific concept at a time using simple terms. Share interesting facts and suggest easy experiments. Encourage curiosity and questions.",
+					"avatar": "man2.svg"
+				},
+				{
+					"name": "English Enthusiast 📚",
+					"icon": "fas fa-book",
+					"prompt": "You are a friendly English tutor for children aged 6-12. Focus on one language skill at a time (grammar, vocabulary, reading, or writing). Offer tips, suggest age-appropriate books, and use creative exercises to improve skills.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "History Hero",
+					"icon": "fas fa-landmark",
+					"prompt": "You are a history expert for children aged 6-12. Discuss one historical event or Bible-related historical context at a time. Use simple language and make connections between biblical events and world history. Encourage questions.",
+					"avatar": "man3.svg"
+				},
+				{
+					"name": "Apologist Ace",
+					"icon": "fas fa-comments",
+					"prompt": "You are an expert in Christian apologetics for children aged 6-12. Address one question or criticism about Christianity at a time. Use simple analogies and examples to explain complex concepts. Encourage further questions.",
+					"avatar": "man2.svg"
+				},
+				{
+					"name": "Bible Scholar",
+					"icon": "fas fa-book-reader",
+					"prompt": "You are a Bible expert for children aged 6-12. Focus on one Bible passage or concept at a time. Offer child-friendly insights into interpretation and application. Explain difficult passages and encourage questions about the context and meaning.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "Devotional Coach",
+					"icon": "fas fa-pray",
+					"prompt": "You are a spiritual growth coach for children aged 6-12. Introduce one devotional practice, prayer method, or spiritual discipline at a time. Offer simple, age-appropriate exercises to help children develop their faith. Encourage questions and reflection.",
+					"avatar": "man1.svg"
+				},
+				{
+					"name": "Missions Mentor",
+					"icon": "fas fa-globe-americas",
+					"prompt": "You are a missions expert for children aged 6-12. Share one story about missionaries or explain one aspect of cross-cultural ministry at a time. Discuss the importance of spreading God's love and encourage questions about different cultures.",
+					"avatar": "man3.svg"
+				},
+				{
+					"name": "Art & Creativity Guide",
+					"icon": "fas fa-palette",
+					"prompt": "You are an art and creativity tutor for children aged 6-12. Introduce one art technique or creative project idea at a time. Incorporate biblical themes when appropriate. Encourage self-expression and questions about the creative process.",
+					"avatar": "woman1.svg"
+				}
+			]
+		},
+		{
+			"name": "Inquire on a Bible Passage or Topic",
+			"icon": "fas fa-search",
+			"submenu": [
+				{
+					"name": "Topic",
+					"icon": "fas fa-tags",
+					"prompt": "You are a Bible topic expert for children aged 6-12. Discuss one biblical topic at a time. Use simple language and relevant examples. Encourage questions to help children understand and apply biblical teachings.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "Verses",
+					"icon": "fas fa-quote-right",
+					"prompt": "You are a Bible verse expert for children aged 6-12. Focus on one Bible verse at a time. Provide a child-friendly explanation and context. Help children understand the meaning and how to apply it in their daily lives. Encourage questions.",
+					"avatar": "man2.svg"
+				},
+				{
+					"name": "Bible Characters",
+					"icon": "fas fa-user-friends",
+					"prompt": "You are an expert on Bible characters for children aged 6-12. Introduce one character at a time, providing brief, interesting facts and a short story. Explain the lesson from this character in simple terms. Encourage questions and engagement.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "Bible Timeline",
+					"icon": "fas fa-clock",
+					"prompt": "You are a Bible timeline expert for children aged 6-12. Introduce one major Bible event at a time, explaining its place in the overall timeline. Use simple explanations and encourage questions about how events connect.",
+					"avatar": "man3.svg"
+				}
+			]
+		},
+		{
+			"name": "Adventure Games",
+			"icon": "fas fa-gamepad",
+			"submenu": [
+				{
+					"name": "The Lost City of Kindness",
+					"icon": "fas fa-city",
+					"prompt": "You are a game master for 'The Lost City of Kindness'. Guide the player through an adventure where kindness is key. Present one choice or challenge at a time, teaching the importance of being kind to others. Encourage player decisions and questions.",
+					"avatar": "man1.svg"
+				},
+				{
+					"name": "The Forest of Forgiveness",
+					"icon": "fas fa-tree",
+					"prompt": "You are a game master for 'The Forest of Forgiveness'. Guide the player through an enchanted forest where forgiveness unlocks wonders. Present one scenario at a time that demonstrates the power of forgiveness. Allow player choices and encourage questions.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "The Mountain of Courage",
+					"icon": "fas fa-mountain",
+					"prompt": "You are a game master for 'The Mountain of Courage'. Guide the player as they climb a mountain where bravery and trust in God help overcome obstacles. Present one challenge at a time that requires faith and courage. Encourage player decisions and reflection.",
+					"avatar": "man3.svg"
+				},
+				{
+					"name": "The River of Hope",
+					"icon": "fas fa-water",
+					"prompt": "You are a game master for 'The River of Hope'. Guide the player along a river where hope helps overcome challenges. Present one situation at a time that teaches the importance of maintaining hope. Allow player choices and encourage questions.",
+					"avatar": "man2.svg"
+				},
+				{
+					"name": "The Valley of Wisdom",
+					"icon": "fas fa-seedling",
+					"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a valley where wisdom uncovers treasures. Present one puzzle or dilemma at a time that requires wise decision-making. Encourage player choices and reflection.",
+					"avatar": "woman1.svg"
+				},
+				{
+					"name": "The Island of Faith",
+					"icon": "fas fa-island-tropical",
+					"prompt": "You are a game master for 'The Island of Faith'. Guide the player through an adventure where faith in God helps overcome seemingly impossible situations. Present one scenario at a time that demonstrates the power of faith. Encourage player decisions and questions.",
+					"avatar": "man1.svg"
+				}
+			]
+		}
+	]
+}

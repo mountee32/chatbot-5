@@ -8,6 +8,6 @@ this is a chat based website for young christians to explore their faith and hav
 
 
 ----- Instructions -----------
-how can we add the icon from the submenu button selection in the title of the chat that has been selected
+here's the current code for you to make those changes in
 
 ----------------

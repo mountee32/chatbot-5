@@ -4,7 +4,12 @@
 	--background-color: #ecf0f1;
 	--text-color: #000000;
 	--chat-bubble-user: #3498db;
-	--chat-bubble-assistant: #2ecc71;
+	--chat-bubble-assistant: #6bc44a; /* Softer green */
+	--button-background: #ffffff;
+	--button-text: var(--primary-color);
+	--button-border: var(--primary-color);
+	--button-hover-background: var(--primary-color);
+	--button-hover-text: #ffffff;
 }
 
 *, *::before, *::after {
@@ -112,6 +117,10 @@ body, html {
 	height: 100vh;
 	background-color: var(--background-color);
 	overflow: hidden;
+	border-radius: 20px;
+	box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+	margin: 20px;
+	padding: 20px;
 }
 
 .chat-header {
@@ -120,6 +129,7 @@ body, html {
 	display: flex;
 	align-items: center;
 	color: #ffffff;
+	border-radius: 10px;
 }
 
 .chat-title {
@@ -145,6 +155,9 @@ body, html {
 	overflow-y: auto;
 	padding: 20px;
 	margin-bottom: 10px;
+	border-radius: 10px;
+	background-color: #ffffff;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .message {
@@ -198,12 +211,14 @@ body, html {
 	justify-content: flex-end;
 	padding: 10px 20px;
 	background-color: rgba(255, 255, 255, 0.05);
+	border-radius: 10px;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .suggestion-button {
-	background-color: #ffffff;
-	color: var(--primary-color);
-	border: 1px solid var(--primary-color);
+	background-color: var(--button-background);
+	color: var(--button-text);
+	border: 1px solid var(--button-border);
 	border-radius: 15px;
 	padding: 5px 10px;
 	margin: 5px;
@@ -213,8 +228,8 @@ body, html {
 }
 
 .suggestion-button:hover {
-	background-color: var(--primary-color);
-	color: #ffffff;
+	background-color: var(--button-hover-background);
+	color: var(--button-hover-text);
 }
 
 .input-area {
@@ -225,6 +240,8 @@ body, html {
 	border-top: 1px solid #e0e0e0;
 	position: sticky;
 	bottom: 0;
+	border-radius: 10px;
+	box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
 }
 
 #user-input {
