@@ -91,18 +91,23 @@ def generate_suggestions(messages, current_prompt):
 		system_message = {
 				"role": "system",
 				"content": f"""You are a suggestion generator for a chatbot. The current context is:
-
+	
 				{current_prompt}
-
-				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. These suggestions should be direct responses to the last question or prompt from the assistant.
-
+	
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. These suggestions should be phrased as statements or questions that the user might say or ask, not as questions directed back at the user.
+	
+				Examples of good suggestions:
+				- "I'm not sure if I believe"
+				- "How can I grow my faith?"
+				- "What if I have doubts sometimes?"
+				- "Can you explain salvation more?"
+	
 				Provide the suggestions in JSON format according to the following schema:
-
+	
 				{json.dumps(schema, indent=2)}
-
-				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
-		}
-
+	
+				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field. Choose appropriate icons that match the content of each suggestion."""
+		}	
 		# Use the last two messages from the chat history
 		last_messages = messages[-2:] if len(messages) >= 2 else messages
 
