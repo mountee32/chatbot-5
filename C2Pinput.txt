@@ -10,6 +10,6 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 ----- Instructions -----------
-the suggeested answers has stopped working they are no longer relevant to the conversation history as you can see in the image
+can we refactor the index.html file as it's getting very large. can we keep the menu structure in the index.html and create a chat.html for all the chat screens that are selected from the menus
 
 ----------------

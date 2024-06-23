@@ -3,6 +3,7 @@ import logging
 import json
 import time
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
+
 from llm_chat import generate_response, generate_suggestions
 
 # Set up Python's logging
@@ -31,8 +32,15 @@ def home():
     log_event('page_load', {'page': 'home'})
     return render_template('index.html', menu_config=menu_config)
 
-@app.route('/chat', methods=['POST'])
+@app.route('/chat')
 def chat():
+    prompt = request.args.get('prompt', '')
+    avatar = request.args.get('avatar', 'default-avatar.svg')
+    log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar})
+    return render_template('chat.html', prompt=prompt, avatar=avatar)
+
+@app.route('/chat', methods=['POST'])
+def chat_message():
     global conversation_history
     user_message = request.json['message']
     conversation_history.append({"role": "user", "content": user_message})

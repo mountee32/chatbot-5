@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Christian Children's Education Chat</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
@@ -20,161 +19,20 @@
             </div>
             <div class="menu-items-container" id="menu-items"></div>
         </div>
-        <div class="chat-container" id="chat-container">
-            <div class="chat-header">
-                <button id="chat-back-button" class="back-button">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="profile-pic"></div>
-                <div class="chat-title">Christian Children's Education Chat</div>
-                <div class="header-icons">
-                    <span><i class="fas fa-phone"></i></span>
-                    <span><i class="fas fa-video"></i></span>
-                    <span><i class="fas fa-ellipsis-v"></i></span>
-                </div>
-            </div>
-            <div id="messages-container" class="messages-container"></div>
-            <div id="suggestions-container" class="suggestions-container"></div>
-            <div class="input-area">
-                <input type="text" id="user-input" placeholder="Type your message...">
-                <button id="send-button"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
     </div>
 
     <script>
-        const md = window.markdownit();
         const menuContainer = document.getElementById('menu-container');
         const menuItems = document.getElementById('menu-items');
         const menuTitle = document.getElementById('menu-title');
         const menuBackButton = document.getElementById('menu-back-button');
-        const chatContainer = document.getElementById('chat-container');
-        const messagesContainer = document.getElementById('messages-container');
-        const suggestionsContainer = document.getElementById('suggestions-container');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const chatBackButton = document.getElementById('chat-back-button');
-
-        const emoticons = {
-            ':)': '😊', ':(': '😢', ':D': '😃', ';)': '😉', ':P': '😛',
-            ':|': '😐', ':\'(': '😭', ':O': '😮', '<3': '❤️', '>:(': '😠'
-        };
 
         let currentMenu = 'main';
         let menuConfig;
         let currentSubmenu;
-        let currentAvatar = '';
-
-        function replaceEmoticons(text) {
-            return text.replace(/:\)|:\(|:D|;\)|:P|:\||:'\(|:O|<3|>:\(/g, match => emoticons[match] || match);
-        }
-
-        function renderContent(content) {
-            const emoticonReplaced = replaceEmoticons(content);
-            return md.render(emoticonReplaced);
-        }
-
-        function addMessage(role, content) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}-message`;
-
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'avatar';
-            if (role === 'user') {
-                avatarDiv.innerHTML = '<img src="/static/assets/user-avatar.svg" alt="User">';
-            } else {
-                avatarDiv.innerHTML = `<img src="/static/assets/${currentAvatar}" alt="Assistant">`;
-            }
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.innerHTML = renderContent(content);
-
-            if (role === 'user') {
-                messageDiv.appendChild(contentDiv);
-                messageDiv.appendChild(avatarDiv);
-            } else {
-                messageDiv.appendChild(avatarDiv);
-                messageDiv.appendChild(contentDiv);
-            }
-
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            return contentDiv;
-        }
-
-        function createSuggestionButton(suggestion) {
-            const button = document.createElement('button');
-            button.className = 'suggestion-button';
-            button.innerHTML = `<i class="${suggestion.icon}"></i> ${suggestion.text}`;
-            button.addEventListener('click', () => {
-                userInput.value = suggestion.text;
-                sendMessage();
-                removeSuggestions();
-            });
-            return button;
-        }
-
-        function removeSuggestions() {
-            suggestionsContainer.innerHTML = '';
-        }
-
-        function updateSuggestions() {
-            fetch('/suggestions')
-                .then(response => response.json())
-                .then(suggestions => {
-                    removeSuggestions();
-                    suggestions.forEach(suggestion => {
-                        suggestionsContainer.appendChild(createSuggestionButton(suggestion));
-                    });
-                });
-        }
-
-        function sendMessage(message = null) {
-            const userMessage = message || userInput.value.trim();
-            if (userMessage) {
-                addMessage('user', userMessage);
-                userInput.value = '';
-                removeSuggestions();
-
-                fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: userMessage }),
-                })
-                .then(response => {
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder();
-                    let assistantMessage = '';
-                    let messageElement = null;
-
-                    function readStream() {
-                        reader.read().then(({ done, value }) => {
-                            if (done) {
-                                updateSuggestions();
-                                return;
-                            }
-                            const chunk = decoder.decode(value);
-                            assistantMessage += chunk;
-                            if (!messageElement) {
-                                messageElement = addMessage('assistant', '');
-                            }
-                            messageElement.innerHTML = renderContent(assistantMessage);
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                            readStream();
-                        });
-                    }
-
-                    readStream();
-                });
-            }
-        }
 
         function showMainMenu() {
             menuContainer.style.display = 'flex';
-            chatContainer.style.display = 'none';
             currentMenu = 'main';
             menuBackButton.style.display = 'none';
             menuTitle.textContent = 'Main Menu';
@@ -184,18 +42,11 @@
 
         function showSubMenu(submenu, title) {
             menuContainer.style.display = 'flex';
-            chatContainer.style.display = 'none';
             currentMenu = 'sub';
             menuBackButton.style.display = 'block';
             menuTitle.textContent = title;
             createSubmenu(submenu);
             fadeInMenuItems();
-        }
-
-        function showChat() {
-            menuContainer.style.display = 'none';
-            chatContainer.style.display = 'flex';
-            currentMenu = 'chat';
         }
 
         function createMenu(menuConfig) {
@@ -223,21 +74,9 @@
                 submenuItem.className = 'submenu-item';
                 submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
                 submenuItem.addEventListener('click', () => {
-                    currentAvatar = subItem.avatar || 'default-avatar.svg';
                     fadeOutMenuItems(submenuItem);
                     setTimeout(() => {
-                        fetch('/set_prompt', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ prompt: subItem.prompt }),
-                        })
-                        .then(() => {
-                            showChat();
-                            resetChat();
-                            sendMessage("Hi, I'm ready to start!");
-                        });
+                        window.location.href = `/chat?prompt=${encodeURIComponent(subItem.prompt)}&avatar=${encodeURIComponent(subItem.avatar)}`;
                     }, 300);
                 });
                 menuItems.appendChild(submenuItem);
@@ -266,32 +105,14 @@
             });
         }
 
-        function resetChat() {
-            messagesContainer.innerHTML = '';
-            removeSuggestions();
-        }
-
         function initializeMenu(config) {
             menuConfig = config;
             showMainMenu();
         }
 
-        sendButton.addEventListener('click', () => sendMessage());
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
         menuBackButton.addEventListener('click', () => {
             if (currentMenu === 'sub') {
                 showMainMenu();
-            }
-        });
-
-        chatBackButton.addEventListener('click', () => {
-            if (currentMenu === 'chat') {
-                showSubMenu(currentSubmenu, menuTitle.textContent);
             }
         });
 
