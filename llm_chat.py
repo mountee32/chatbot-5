@@ -81,7 +81,7 @@ def generate_suggestions(messages, current_prompt):
 
 				{current_prompt}
 
-				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. 
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. If the last message contains multiple choice answers then use those as the basis to suggest follow on responses
 
 				Provide the suggestions in JSON format according to the following schema:
 
