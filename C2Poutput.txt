@@ -4,13 +4,13 @@ This is my website chat program being developed in replit IDE based on flask
 
 It has multi-user chatting with a LLM
 
-this is a chat based website for young christians to explore their fair
+this is a chat based website for young christians to explore their faith
 
 If recommending changes to a specifc file then please give the full file contents and not just the changes, there is no need to also describe the changes unless there is a problem I need to be aware of. 
 
-Suggest the changes needed
+Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 ----- Instructions -----------
-the AI assistant chat avatar is positioned incorrectly,  Keep the  message on the left side of the chat window, but move the  avatar to the right side of the message bubble next to the message bubble, don't make any other changes
+the current UI is ugly, keep the layout the same but suggest better color scheme for a friendly chat app
 
 ----------------
 ## templates/index.html
@@ -111,8 +111,8 @@ the AI assistant chat avatar is positioned incorrectly,  Keep the  message on th
                 messageDiv.appendChild(contentDiv);
                 messageDiv.appendChild(avatarDiv);
             } else {
-                messageDiv.appendChild(avatarDiv);
                 messageDiv.appendChild(contentDiv);
+                messageDiv.appendChild(avatarDiv);
             }
 
             messagesContainer.appendChild(messageDiv);
@@ -287,7 +287,6 @@ the AI assistant chat avatar is positioned incorrectly,  Keep the  message on th
     </script>
 </body>
 </html>
-
 ## test_llm_chat.py
 
 import os

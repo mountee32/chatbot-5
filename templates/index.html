@@ -18,7 +18,7 @@
                 </button>
                 <div class="menu-title" id="menu-title">Main Menu</div>
             </div>
-            <div id="menu-items"></div>
+            <div class="menu-items-container" id="menu-items"></div>
         </div>
         <div class="chat-container" id="chat-container">
             <div class="chat-header">
@@ -94,8 +94,8 @@
                 messageDiv.appendChild(contentDiv);
                 messageDiv.appendChild(avatarDiv);
             } else {
-                messageDiv.appendChild(contentDiv);
                 messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(contentDiv);
             }
 
             messagesContainer.appendChild(messageDiv);
