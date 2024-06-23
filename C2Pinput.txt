@@ -8,6 +8,6 @@ this is a chat based website for young christians to explore their faith and hav
 
 
 ----- Instructions -----------
-how can i control the llm tempeture for both the suggestions LLM API and the general request chat llm api
+how can i ensure the menu items and submenu items are all the same size, explain how you would do it before we code it
 
 ----------------

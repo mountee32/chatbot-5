@@ -4,7 +4,7 @@
 	--background-color: #ecf0f1;
 	--text-color: #000000;
 	--chat-bubble-user: #3498db;
-	--chat-bubble-assistant: #6bc44a; /* Softer green */
+	--chat-bubble-assistant: #6bc44a;
 	--button-background: #ffffff;
 	--button-text: var(--primary-color);
 	--button-border: var(--primary-color);
@@ -17,13 +17,13 @@
 }
 
 body, html {
-		height: 100%;
-		margin: 0;
-		padding: 0;
-		font-family: 'Roboto', sans-serif;
-		background: linear-gradient(135deg, #d2d7f9 0%, #87a1f8 50%, #3993f3 100%);
-		color: var(--text-color);
-		overflow: hidden;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: 'Roboto', sans-serif;
+	background: linear-gradient(135deg, #d2d7f9 0%, #87a1f8 50%, #3993f3 100%);
+	color: var(--text-color);
+	overflow: hidden;
 }
 
 .container {
@@ -88,15 +88,20 @@ body, html {
 	transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	font-size: 1.2em;
 	width: calc(50% - 20px);
 	max-width: 250px;
 	min-width: 200px;
+	height: 80px;
 	color: var(--text-color);
 	word-wrap: break-word;
 	white-space: normal;
+	text-align: center;
 	flex-grow: 1;
 	box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .menu-item:hover, .submenu-item:hover {
@@ -304,4 +309,26 @@ body, html {
 .fade-in {
 	opacity: 1;
 	pointer-events: auto;
+}
+
+/* Media query for responsive design */
+@media (max-width: 768px) {
+	.menu-item, .submenu-item {
+			width: calc(100% - 20px);
+			max-width: none;
+			height: 70px;
+	}
+
+	.menu-title {
+			font-size: 2em;
+	}
+
+	.chat-container {
+			margin: 10px;
+			padding: 10px;
+	}
+
+	.message-content {
+			max-width: 80%;
+	}
 }
