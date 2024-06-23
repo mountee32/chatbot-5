@@ -10,7 +10,8 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 ----- Instructions -----------
-remove the time from being displayed next to messages
+the user chat avatar are positioned incorrectly,  Keep the user's message on the right side of the chat window, but move the user's avatar to the left side of the message bubble next to the message buble
+
 
 ----------------
 ## templates/index.html
@@ -108,11 +109,6 @@ remove the time from being displayed next to messages
             contentDiv.className = 'message-content';
             contentDiv.innerHTML = renderContent(content);
             messageDiv.appendChild(contentDiv);
-
-            const timestamp = document.createElement('div');
-            timestamp.className = 'timestamp';
-            timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            messageDiv.appendChild(timestamp);
 
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -879,6 +875,3 @@ if __name__ == "__main__":
 }
 ]
 }
-## log.txt
-
-

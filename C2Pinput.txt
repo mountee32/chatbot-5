@@ -10,11 +10,7 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 ----- Instructions -----------
-the chat avatars are positioned incorrectly, please move them to the location shown in the mock up image.  explain what you see first, let me agree, then code changes
+the user chat avatar are positioned incorrectly,  Keep the user's message on the right side of the chat window, but move the user's avatar to the left side of the message bubble next to the message bubble
 
-We're looking for two changes 
-1. Keep the user's message on the right side of the chat window, but move the user's avatar to the left side of the message bubble.
-
-2. Keep the AI assistant's message on the left side of the chat window, but move the AI assistant's avatar to the right side of the message bubble.
 
 ----------------

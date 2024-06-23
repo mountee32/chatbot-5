@@ -77,7 +77,7 @@
         function addMessage(role, content) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}-message`;
-            
+
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'avatar';
             if (role === 'user') {
@@ -85,12 +85,18 @@
             } else {
                 avatarDiv.innerHTML = `<img src="/static/assets/${currentAvatar}" alt="Assistant">`;
             }
-            messageDiv.appendChild(avatarDiv);
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             contentDiv.innerHTML = renderContent(content);
-            messageDiv.appendChild(contentDiv);
+
+            if (role === 'user') {
+                messageDiv.appendChild(contentDiv);
+                messageDiv.appendChild(avatarDiv);
+            } else {
+                messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(contentDiv);
+            }
 
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
