@@ -12,18 +12,19 @@
 <body>
     <div class="container">
         <div class="chat-container" id="chat-container">
-            <div class="chat-header">
-                <button id="chat-back-button" class="back-button">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="profile-pic"></div>
-                <div class="chat-title">Christian Children's Education Chat</div>
-                <div class="header-icons">
-                    <span><i class="fas fa-phone"></i></span>
-                    <span><i class="fas fa-video"></i></span>
-                    <span><i class="fas fa-ellipsis-v"></i></span>
-                </div>
-            </div>
+					<div class="chat-header">
+							<button id="chat-back-button" class="back-button">
+									<i class="fas fa-arrow-left"></i>
+							</button>
+							<div class="chat-title">
+									<i class="{{ icon }}"></i> {{ title }}
+							</div>
+							<div class="header-icons">
+									<span><i class="fas fa-phone"></i></span>
+									<span><i class="fas fa-video"></i></span>
+									<span><i class="fas fa-ellipsis-v"></i></span>
+							</div>
+					</div>
             <div id="messages-container" class="messages-container"></div>
             <div id="suggestions-container" class="suggestions-container"></div>
             <div class="input-area">

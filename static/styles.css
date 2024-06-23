@@ -116,24 +116,23 @@ body, html {
 
 .chat-header {
 	background-color: var(--primary-color);
-	padding: 20px;
+	padding: 15px 20px;
 	display: flex;
 	align-items: center;
 	color: #ffffff;
-}
-
-.profile-pic {
-	width: 40px;
-	height: 40px;
-	border-radius: 50%;
-	background-color: #ffffff;
-	margin-right: 10px;
 }
 
 .chat-title {
 	flex-grow: 1;
 	font-size: 1.2em;
 	font-weight: bold;
+	display: flex;
+	align-items: center;
+}
+
+.chat-title i {
+	margin-right: 10px;
+	font-size: 1.2em;
 }
 
 .header-icons span {

@@ -37,9 +37,11 @@ def chat():
     global current_prompt
     prompt = request.args.get('prompt', '')
     avatar = request.args.get('avatar', 'default-avatar.svg')
+    icon = request.args.get('icon', 'fas fa-comment')
+    title = request.args.get('title', 'Chat')  # Add this line
     current_prompt = prompt
-    log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar})
-    return render_template('chat.html', prompt=prompt, avatar=avatar)
+    log_event('chat_page_load', {'prompt': prompt, 'avatar': avatar, 'icon': icon, 'title': title})
+    return render_template('chat.html', prompt=prompt, avatar=avatar, icon=icon, title=title)  # Add title here
 
 @app.route('/chat', methods=['POST'])
 def chat_message():

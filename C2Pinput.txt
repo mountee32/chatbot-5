@@ -8,6 +8,6 @@ this is a chat based website for young christians to explore their faith and hav
 
 
 ----- Instructions -----------
-when the chat starts, can the AI assistant intititate the conversation in a way that's relevant to the system prompt instead generically saying how can I help.  and there's no need for a automatic prompt from the user.  the first message in the chat should be from the AI assistant 
+how can we add the icon from the submenu button selection in the title of the chat that has been selected
 
 ----------------

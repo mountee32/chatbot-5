@@ -76,7 +76,7 @@
                 submenuItem.addEventListener('click', () => {
                     fadeOutMenuItems(submenuItem);
                     setTimeout(() => {
-                        window.location.href = `/chat?prompt=${encodeURIComponent(subItem.prompt)}&avatar=${encodeURIComponent(subItem.avatar)}`;
+                        window.location.href = `/chat?prompt=${encodeURIComponent(subItem.prompt)}&avatar=${encodeURIComponent(subItem.avatar)}&icon=${encodeURIComponent(subItem.icon)}&title=${encodeURIComponent(subItem.name)}`;
                     }, 300);
                 });
                 menuItems.appendChild(submenuItem);
