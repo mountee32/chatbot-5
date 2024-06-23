@@ -179,6 +179,7 @@
             menuBackButton.style.display = 'none';
             menuTitle.textContent = 'Main Menu';
             createMenu(menuConfig);
+            fadeInMenuItems();
         }
 
         function showSubMenu(submenu, title) {
@@ -188,6 +189,7 @@
             menuBackButton.style.display = 'block';
             menuTitle.textContent = title;
             createSubmenu(submenu);
+            fadeInMenuItems();
         }
 
         function showChat() {
@@ -206,7 +208,10 @@
 
                 menuItem.addEventListener('click', () => {
                     currentSubmenu = item.submenu;
-                    showSubMenu(item.submenu, item.name);
+                    fadeOutMenuItems(menuItem);
+                    setTimeout(() => {
+                        showSubMenu(item.submenu, item.name);
+                    }, 300);
                 });
             });
         }
@@ -219,20 +224,45 @@
                 submenuItem.innerHTML = `<i class="${subItem.icon}"></i>${subItem.name}`;
                 submenuItem.addEventListener('click', () => {
                     currentAvatar = subItem.avatar || 'default-avatar.svg';
-                    fetch('/set_prompt', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ prompt: subItem.prompt }),
-                    })
-                    .then(() => {
-                        showChat();
-                        resetChat();
-                        sendMessage("Hi, I'm ready to start!");
-                    });
+                    fadeOutMenuItems(submenuItem);
+                    setTimeout(() => {
+                        fetch('/set_prompt', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ prompt: subItem.prompt }),
+                        })
+                        .then(() => {
+                            showChat();
+                            resetChat();
+                            sendMessage("Hi, I'm ready to start!");
+                        });
+                    }, 300);
                 });
                 menuItems.appendChild(submenuItem);
+            });
+        }
+
+        function fadeOutMenuItems(selectedItem) {
+            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
+            items.forEach(item => {
+                if (item !== selectedItem) {
+                    item.classList.add('fade-out');
+                }
+            });
+            setTimeout(() => {
+                selectedItem.classList.add('fade-out');
+            }, 150);
+        }
+
+        function fadeInMenuItems() {
+            const items = menuItems.querySelectorAll('.menu-item, .submenu-item');
+            items.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.remove('fade-out');
+                    item.classList.add('fade-in');
+                }, index * 50);
             });
         }
 
