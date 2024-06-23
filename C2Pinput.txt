@@ -10,8 +10,11 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 ----- Instructions -----------
-add avatar next to the chat messages like the mock up image.  the avatar svg files are held in the assets folder and the name of the one to use in the menu config file e.g. "name": "The Valley of Wisdom",
-"icon": "fas fa-seedling",
-"prompt": "You are a game master for 'The Valley of Wisdom'. Guide the player through a serene valley where wisdom, discernment, and prayer help uncover hidden treasures.",
-"avatar": "woman1.svg"
+the chat avatars are positioned incorrectly, please move them to the location shown in the mock up image.  explain what you see first, let me agree, then code changes
+
+We're looking for two changes 
+1. Keep the user's message on the right side of the chat window, but move the user's avatar to the left side of the message bubble.
+
+2. Keep the AI assistant's message on the left side of the chat window, but move the AI assistant's avatar to the right side of the message bubble.
+
 ----------------
