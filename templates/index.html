@@ -15,7 +15,7 @@
                 <button id="menu-back-button" class="back-button" style="display: none;">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <div class="menu-title" id="menu-title">Main Menu</div>
+                <div class="menu-title" id="menu-title" style="color: white;">Main Menu</div> <!-- Updated line -->
             </div>
             <div class="menu-items-container" id="menu-items"></div>
         </div>
@@ -35,7 +35,8 @@
             menuContainer.style.display = 'flex';
             currentMenu = 'main';
             menuBackButton.style.display = 'none';
-            menuTitle.textContent = 'Main Menu';
+            menuTitle.textContent = 'AI 4 Christians';  // Set the new title
+            menuTitle.style.color = 'white';  // Set text color to white
             createMenu(menuConfig);
             fadeInMenuItems();
         }

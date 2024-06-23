@@ -225,11 +225,18 @@ body, html {
 	cursor: pointer;
 	font-size: 0.9em;
 	transition: all 0.3s ease;
+	display: flex;
+	align-items: center;
 }
 
 .suggestion-button:hover {
 	background-color: var(--button-hover-background);
 	color: var(--button-hover-text);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.suggestion-button i {
+	margin-right: 5px;
 }
 
 .input-area {
