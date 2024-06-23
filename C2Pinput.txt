@@ -8,6 +8,6 @@ this is a chat based website for young christians to explore their faith and hav
 
 
 ----- Instructions -----------
-here's the current code for you to make those changes in
+how can i control the llm tempeture for both the suggestions LLM API and the general request chat llm api
 
 ----------------

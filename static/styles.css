@@ -17,13 +17,13 @@
 }
 
 body, html {
-	height: 100%;
-	margin: 0;
-	padding: 0;
-	font-family: 'Roboto', sans-serif;
-	background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-	color: var(--text-color);
-	overflow: hidden;
+		height: 100%;
+		margin: 0;
+		padding: 0;
+		font-family: 'Roboto', sans-serif;
+		background: linear-gradient(135deg, #d2d7f9 0%, #87a1f8 50%, #3993f3 100%);
+		color: var(--text-color);
+		overflow: hidden;
 }
 
 .container {
