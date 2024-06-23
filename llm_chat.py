@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4"
+CHATMODEL = "openai/gpt-4o"
+SUGGESTMODEL = "openai/gpt-4"
 
 def generate_response(messages, current_prompt):
 		headers = {
@@ -27,7 +28,7 @@ def generate_response(messages, current_prompt):
 		messages = [system_message] + messages
 
 		data = {
-				"model": MODEL,
+				"model": CHATMODEL,
 				"messages": messages,
 				"stream": True
 		}
@@ -96,7 +97,7 @@ def generate_suggestions(messages, current_prompt):
 		full_messages = [system_message, last_message]
 
 		data = {
-				"model": MODEL,
+				"model": SUGGESTMODEL,
 				"messages": full_messages,
 				"max_tokens": 250
 		}
