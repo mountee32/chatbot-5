@@ -51,106 +51,112 @@ def generate_response(messages, current_prompt):
 										continue
 
 def generate_suggestions(messages, current_prompt):
-		headers = {
-				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
-				"HTTP-Referer": "https://your-app-url.com",
-				"X-Title": "OpenRouter Chatbot",
-				"Content-Type": "application/json"
-		}
+	# Log input parameters
+	logger.info(f"generate_suggestions called with:")
+	logger.info(f"current_prompt: {current_prompt}")
+	logger.info(f"messages: {json.dumps(messages, indent=2)}")
 
-		schema = {
-				"type": "object",
-				"properties": {
-						"suggestions": {
-								"type": "array",
-								"items": {
-										"type": "object",
-										"properties": {
-												"text": {"type": "string"},
-												"icon": {"type": "string"}
-										},
-										"required": ["text", "icon"]
-								}
-						}
-				},
-				"required": ["suggestions"]
-		}
+	headers = {
+			"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+			"HTTP-Referer": "https://your-app-url.com",
+			"X-Title": "OpenRouter Chatbot",
+			"Content-Type": "application/json"
+	}
 
-		system_message = {
-				"role": "system",
-				"content": f"""You are a suggestion generator for a chatbot. The current context is:
+	schema = {
+			"type": "object",
+			"properties": {
+					"suggestions": {
+							"type": "array",
+							"items": {
+									"type": "object",
+									"properties": {
+											"text": {"type": "string"},
+											"icon": {"type": "string"}
+									},
+									"required": ["text", "icon"]
+							}
+					}
+			},
+			"required": ["suggestions"]
+	}
 
-				{current_prompt}
+	system_message = {
+			"role": "system",
+			"content": f"""You are a suggestion generator for a chatbot. The current context is:
 
-				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. If the last message contains multiple choice answers then use those as the basis to suggest follow on responses
+			{current_prompt}
 
-				Provide the suggestions in JSON format according to the following schema:
+			Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. These suggestions should be direct responses to the last question or prompt from the assistant.
 
-				{json.dumps(schema, indent=2)}
+			Provide the suggestions in JSON format according to the following schema:
 
-				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
-		}
+			{json.dumps(schema, indent=2)}
 
-		# Use only the last message from the chat history
-		last_message = messages[-1] if messages else {"role": "user", "content": ""}
+			Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
+	}
 
-		full_messages = [system_message, last_message]
+	# Use the last two messages from the chat history
+	last_messages = messages[-2:] if len(messages) >= 2 else messages
 
-		data = {
-				"model": SUGGESTMODEL,
-				"messages": full_messages,
-				"max_tokens": 250
-		}
+	full_messages = [system_message] + last_messages
 
-		logger.info("Sending request to API")
+	data = {
+			"model": SUGGESTMODEL,
+			"messages": full_messages,
+			"max_tokens": 250
+	}
 
-		try:
-				response = requests.post(API_URL, headers=headers, json=data)
-				response.raise_for_status()
+	logger.info("Sending request to API")
+	logger.debug(f"Request data: {json.dumps(data, indent=2)}")
 
-				response_json = response.json()
-				logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
+	try:
+			response = requests.post(API_URL, headers=headers, json=data)
+			response.raise_for_status()
 
-				if 'choices' not in response_json:
-						logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
-						return []
+			response_json = response.json()
+			logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
 
-				content = response_json['choices'][0]['message']['content']
-				logger.info(f"Content from API: {content}")
+			if 'choices' not in response_json:
+					logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
+					return []
 
-				try:
-						suggestions_data = json.loads(content)
-						if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
-								suggestions = suggestions_data['suggestions']
-						elif isinstance(suggestions_data, list):
-								suggestions = suggestions_data
-						else:
-								logger.warning(f"Unexpected content structure. Content: {content}")
-								return []
+			content = response_json['choices'][0]['message']['content']
+			logger.info(f"Content from API: {content}")
 
-						logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
-						return suggestions
-				except json.JSONDecodeError:
-						logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
-						return []
+			try:
+					suggestions_data = json.loads(content)
+					if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+							suggestions = suggestions_data['suggestions']
+					elif isinstance(suggestions_data, list):
+							suggestions = suggestions_data
+					else:
+							logger.warning(f"Unexpected content structure. Content: {content}")
+							return []
 
-		except requests.RequestException as e:
-				logger.error(f"Error making request to API: {str(e)}")
-				return []
+					logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+					return suggestions
+			except json.JSONDecodeError:
+					logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
+					return []
 
-		except (KeyError, IndexError, TypeError) as e:
-				logger.error(f"Error parsing API response: {str(e)}")
-				logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
-				return []
+	except requests.RequestException as e:
+			logger.error(f"Error making request to API: {str(e)}")
+			return []
+
+	except (KeyError, IndexError, TypeError) as e:
+			logger.error(f"Error parsing API response: {str(e)}")
+			logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
+			return []
 
 # Example usage
 if __name__ == "__main__":
-		sample_messages = [
-				{"role": "user", "content": "Hi, I'm ready to start!"},
-				{"role": "assistant", "content": "Great! What would you like to learn about today?"}
-		]
-		sample_prompt = "You are a helpful assistant for a learning platform."
+	sample_messages = [
+			{"role": "user", "content": "Hi, I'm ready to start!"},
+			{"role": "assistant", "content": "Great! What would you like to learn about today?"}
+	]
+	sample_prompt = "You are a helpful assistant for a learning platform."
 
-		logger.info("Generating suggestions...")
-		suggestions = generate_suggestions(sample_messages, sample_prompt)
-		logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")
+	logger.info("Generating suggestions...")
+	suggestions = generate_suggestions(sample_messages, sample_prompt)
+	logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")

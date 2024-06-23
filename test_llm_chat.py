@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-4"
+CHATMODEL = "openai/gpt-4o"
+SUGGESTMODEL = "openai/gpt-4"
 
 def generate_response(messages, current_prompt):
 		headers = {
@@ -49,7 +50,7 @@ def generate_response(messages, current_prompt):
 								except json.JSONDecodeError:
 										continue
 
-def generate_suggestions(messages, current_prompt):
+	def generate_suggestions(messages, current_prompt):
 		headers = {
 				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
 				"HTTP-Referer": "https://your-app-url.com",
@@ -81,7 +82,7 @@ def generate_suggestions(messages, current_prompt):
 
 				{current_prompt}
 
-				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. 
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. These suggestions should be direct responses to the last question or prompt from the assistant.
 
 				Provide the suggestions in JSON format according to the following schema:
 
@@ -90,13 +91,13 @@ def generate_suggestions(messages, current_prompt):
 				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
 		}
 
-		# Use only the last message from the chat history
-		last_message = messages[-1] if messages else {"role": "user", "content": ""}
+		# Use the last two messages from the chat history
+		last_messages = messages[-2:] if len(messages) >= 2 else messages
 
-		full_messages = [system_message, last_message]
+		full_messages = [system_message] + last_messages
 
 		data = {
-				"model": MODEL,
+				"model": SUGGESTMODEL,
 				"messages": full_messages,
 				"max_tokens": 250
 		}
@@ -121,11 +122,14 @@ def generate_suggestions(messages, current_prompt):
 						suggestions_data = json.loads(content)
 						if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
 								suggestions = suggestions_data['suggestions']
-								logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
-								return suggestions
+						elif isinstance(suggestions_data, list):
+								suggestions = suggestions_data
 						else:
 								logger.warning(f"Unexpected content structure. Content: {content}")
 								return []
+
+						logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+						return suggestions
 				except json.JSONDecodeError:
 						logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
 						return []
@@ -139,8 +143,8 @@ def generate_suggestions(messages, current_prompt):
 				logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
 				return []
 
-# Example usage
-if __name__ == "__main__":
+	# Example usage
+	if __name__ == "__main__":
 		sample_messages = [
 				{"role": "user", "content": "Hi, I'm ready to start!"},
 				{"role": "assistant", "content": "Great! What would you like to learn about today?"}

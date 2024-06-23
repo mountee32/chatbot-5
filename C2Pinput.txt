@@ -10,6 +10,6 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 ----- Instructions -----------
-check the logic for the fade out of the menu items when selected as they do not appear to be working 
+the suggeested answers has stopped working they are no longer relevant to the conversation history as you can see in the image
 
 ----------------
