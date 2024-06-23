@@ -4,12 +4,10 @@ This is my website chat program being developed in replit IDE based on flask
 
 It has multi-user chatting with a LLM
 
-this is a chat based website for young christians to explore their faith
+this is a chat based website for young christians to explore their faith and have fun
 
-If recommending changes to a specifc file then please give the full file contents and not just the changes, there is no need to also describe the changes unless there is a problem I need to be aware of. 
 
-Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 ----- Instructions -----------
-when the chat starts, why is the input area not at the bottom of the chat as you can see in the image
+when the chat starts, can the AI assistant intititate the conversation in a way that's relevant to the system prompt instead generically saying how can I help.  and there's no need for a automatic prompt from the user.  the first message in the chat should be from the AI assistant 
 
 ----------------
