@@ -1,108 +1,152 @@
-import unittest
 import os
+import json
+import requests
 import logging
-from unittest.mock import patch, MagicMock
-from llm_chat import generate_response, generate_suggestions
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG,
-										format='%(asctime)s - %(levelname)s - %(message)s',
-										filename='test-log.txt',
-										filemode='w')
-
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class TestLLMChat(unittest.TestCase):
+OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "openai/gpt-4"
 
-		def setUp(self):
-				logger.info(f"Starting test: {self._testMethodName}")
+def generate_response(messages, current_prompt):
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
 
-		def tearDown(self):
-				logger.info(f"Finished test: {self._testMethodName}\n")
+		system_message = {
+				"role": "system",
+				"content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
+		}
 
-		@patch('llm_chat.requests.post')
-		def test_generate_response(self, mock_post):
-				logger.info("Running test_generate_response")
-				# Mock the response from the API
-				mock_response = MagicMock()
-				mock_response.iter_lines.return_value = [
-						b'data: {"choices":[{"delta":{"content":"Hello"}}]}',
-						b'data: {"choices":[{"delta":{"content":" world"}}]}',
-						b'data: [DONE]'
-				]
-				mock_post.return_value = mock_response
+		messages = [system_message] + messages
 
-				messages = [{"role": "user", "content": "Hi"}]
-				current_prompt = "You are a helpful assistant"
+		data = {
+				"model": MODEL,
+				"messages": messages,
+				"stream": True
+		}
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+		response = requests.post(API_URL, headers=headers, json=data, stream=True)
 
-				result = list(generate_response(messages, current_prompt))
-				logger.debug(f"Generated response: {result}")
+		for line in response.iter_lines():
+				if line:
+						line = line.decode('utf-8')
+						if line.startswith('data: '):
+								line = line[6:]
+								if line.strip() == '[DONE]':
+										break
+								try:
+										json_object = json.loads(line)
+										content = json_object['choices'][0]['delta'].get('content', '')
+										if content:
+												yield content
+								except json.JSONDecodeError:
+										continue
 
-				self.assertEqual(result, ["Hello", " world"])
-				logger.info("test_generate_response passed")
+def generate_suggestions(messages, current_prompt):
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
 
-		@patch('llm_chat.requests.post')
-		def test_generate_suggestions(self, mock_post):
-				logger.info("Running test_generate_suggestions")
-				# Mock the response from the API
-				mock_response = MagicMock()
-				mock_response.json.return_value = {
-						"choices": [
-								{
-										"message": {
-												"content": '[{"text":"Tell me about Jesus","icon":"fas fa-cross"}]'
-										}
+		schema = {
+				"type": "object",
+				"properties": {
+						"suggestions": {
+								"type": "array",
+								"items": {
+										"type": "object",
+										"properties": {
+												"text": {"type": "string"},
+												"icon": {"type": "string"}
+										},
+										"required": ["text", "icon"]
 								}
-						]
-				}
-				mock_post.return_value = mock_response
+						}
+				},
+				"required": ["suggestions"]
+		}
 
-				messages = [{"role": "user", "content": "Hi"}]
-				current_prompt = "You are a helpful assistant"
+		system_message = {
+				"role": "system",
+				"content": f"""You are a suggestion generator for a chatbot. The current context is:
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+				{current_prompt}
 
-				result = generate_suggestions(messages, current_prompt)
-				logger.debug(f"Generated suggestions: {result}")
+				Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. 
 
-				self.assertEqual(result, [{"text":"Tell me about Jesus","icon":"fas fa-cross"}])
-				logger.info("test_generate_suggestions passed")
+				Provide the suggestions in JSON format according to the following schema:
 
-		@unittest.skipIf('OPENROUTER_API_KEY' not in os.environ, "API key not available")
-		def test_generate_response_integration(self):
-				logger.info("Running test_generate_response_integration")
-				messages = [{"role": "user", "content": "Hello, how are you?"}]
-				current_prompt = "You are a helpful assistant"
+				{json.dumps(schema, indent=2)}
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+				Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
+		}
 
-				response = list(generate_response(messages, current_prompt))
-				logger.debug(f"Generated response: {response}")
+		# Use only the last message from the chat history
+		last_message = messages[-1] if messages else {"role": "user", "content": ""}
 
-				self.assertTrue(len(response) > 0, "Response should not be empty")
-				logger.info("test_generate_response_integration passed")
+		full_messages = [system_message, last_message]
 
-		@unittest.skipIf('OPENROUTER_API_KEY' not in os.environ, "API key not available")
-		def test_generate_suggestions_integration(self):
-				logger.info("Running test_generate_suggestions_integration")
-				messages = [{"role": "user", "content": "Tell me about Jesus"}]
-				current_prompt = "You are a Christian chatbot"
+		data = {
+				"model": MODEL,
+				"messages": full_messages,
+				"max_tokens": 250
+		}
 
-				logger.debug(f"Input messages: {messages}")
-				logger.debug(f"Current prompt: {current_prompt}")
+		logger.info("Sending request to API")
 
-				suggestions = generate_suggestions(messages, current_prompt)
-				logger.debug(f"Generated suggestions: {suggestions}")
+		try:
+				response = requests.post(API_URL, headers=headers, json=data)
+				response.raise_for_status()
 
-				self.assertTrue(len(suggestions) > 0, "Should return at least one suggestion")
-				self.assertIn('text', suggestions[0], "Suggestion should have 'text' field")
-				self.assertIn('icon', suggestions[0], "Suggestion should have 'icon' field")
-				logger.info("test_generate_suggestions_integration passed")
+				response_json = response.json()
+				logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
 
-if __name__ == '__main__':
-		unittest.main()
+				if 'choices' not in response_json:
+						logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
+						return []
+
+				content = response_json['choices'][0]['message']['content']
+				logger.info(f"Content from API: {content}")
+
+				try:
+						suggestions_data = json.loads(content)
+						if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+								suggestions = suggestions_data['suggestions']
+								logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+								return suggestions
+						else:
+								logger.warning(f"Unexpected content structure. Content: {content}")
+								return []
+				except json.JSONDecodeError:
+						logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
+						return []
+
+		except requests.RequestException as e:
+				logger.error(f"Error making request to API: {str(e)}")
+				return []
+
+		except (KeyError, IndexError, TypeError) as e:
+				logger.error(f"Error parsing API response: {str(e)}")
+				logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
+				return []
+
+# Example usage
+if __name__ == "__main__":
+		sample_messages = [
+				{"role": "user", "content": "Hi, I'm ready to start!"},
+				{"role": "assistant", "content": "Great! What would you like to learn about today?"}
+		]
+		sample_prompt = "You are a helpful assistant for a learning platform."
+
+		logger.info("Generating suggestions...")
+		suggestions = generate_suggestions(sample_messages, sample_prompt)
+		logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")

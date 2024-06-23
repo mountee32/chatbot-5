@@ -10,4 +10,244 @@ If recommending changes to a specifc file then please give the full file content
 
 Don't be lazy, give the full file for each changing file and don't expect me to merge on and new files.
 -----
-replace the chat_log.json with log.txt which is step by step logging from every function and step so we can see exactly what is happening within the app, this should be in clear text format and include the time and value of key parameters beibg passed, this should provide detailed visibility of all key applicaiton activity for diagnostics and will be turned off before we go live
+modify the function to create suggested answers to use the below proof of concept code, ammend other files like main.py as needed to work with it:
+
+--------------------- Sample Proof of concept code to copy -----------------
+
+import os
+import json
+import requests
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "openai/gpt-4"
+
+def generate_response(messages, current_prompt):
+		headers = {
+				"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+				"HTTP-Referer": "https://your-app-url.com",
+				"X-Title": "OpenRouter Chatbot",
+				"Content-Type": "application/json"
+		}
+
+		system_message = {
+				"role": "system",
+				"content": current_prompt or "You can use Markdown syntax and emoticons in your responses. Common emoticons like :), :(, :D will be automatically converted to emojis."
+		}
+
+		messages = [system_message] + messages
+
+		data = {
+				"model": MODEL,
+				"messages": messages,
+				"stream": True
+		}
+
+		response = requests.post(API_URL, headers=headers, json=data, stream=True)
+
+		for line in response.iter_lines():
+				if line:
+						line = line.decode('utf-8')
+						if line.startswith('data: '):
+								line = line[6:]
+								if line.strip() == '[DONE]':
+										break
+								try:
+										json_object = json.loads(line)
+										content = json_object['choices'][0]['delta'].get('content', '')
+										if content:
+												yield content
+								except json.JSONDecodeError:
+										continue
+
+def generate_suggestions(messages, current_prompt):
+	headers = {
+			"Authorization": f"Bearer {OPENROUTER_API_KEY}",
+			"HTTP-Referer": "https://your-app-url.com",
+			"X-Title": "OpenRouter Chatbot",
+			"Content-Type": "application/json"
+	}
+
+	schema = {
+			"type": "object",
+			"properties": {
+					"suggestions": {
+							"type": "array",
+							"items": {
+									"type": "object",
+									"properties": {
+											"text": {"type": "string"},
+											"icon": {"type": "string"}
+									},
+									"required": ["text", "icon"]
+							}
+					}
+			},
+			"required": ["suggestions"]
+	}
+
+	system_message = {
+			"role": "system",
+			"content": f"""You are a suggestion generator for a chatbot. The current context is:
+
+			{current_prompt}
+
+			Based on this context and the last message in the conversation, generate 2-4 relevant, short (max 10 words) suggestions for the user's next message. 
+
+			Provide the suggestions in JSON format according to the following schema:
+
+			{json.dumps(schema, indent=2)}
+
+			Use 'fas fa-' prefix for FontAwesome icons in the 'icon' field."""
+	}
+
+	# Use only the last message from the chat history
+	last_message = messages[-1] if messages else {"role": "user", "content": ""}
+
+	full_messages = [system_message, last_message]
+
+	data = {
+			"model": MODEL,
+			"messages": full_messages,
+			"max_tokens": 250
+	}
+
+	logger.info("Sending request to API")
+
+	try:
+			response = requests.post(API_URL, headers=headers, json=data)
+			response.raise_for_status()
+
+			response_json = response.json()
+			logger.debug(f"API Response: {json.dumps(response_json, indent=2)}")
+
+			if 'choices' not in response_json:
+					logger.error(f"Unexpected API response structure. Response: {json.dumps(response_json, indent=2)}")
+					return []
+
+			content = response_json['choices'][0]['message']['content']
+			logger.info(f"Content from API: {content}")
+
+			try:
+					suggestions_data = json.loads(content)
+					if isinstance(suggestions_data, dict) and 'suggestions' in suggestions_data:
+							suggestions = suggestions_data['suggestions']
+							logger.info(f"Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+							return suggestions
+					else:
+							logger.warning(f"Unexpected content structure. Content: {content}")
+							return []
+			except json.JSONDecodeError:
+					logger.warning(f"Failed to parse suggestions as JSON. Content: {content}")
+					return []
+
+	except requests.RequestException as e:
+			logger.error(f"Error making request to API: {str(e)}")
+			return []
+
+	except (KeyError, IndexError, TypeError) as e:
+			logger.error(f"Error parsing API response: {str(e)}")
+			logger.error(f"Response JSON: {json.dumps(response_json, indent=2)}")
+			return []
+
+# Example usage
+if __name__ == "__main__":
+	sample_messages = [
+			{"role": "user", "content": "Hi, I'm ready to start!"},
+			{"role": "assistant", "content": "Great! What would you like to learn about today?"}
+	]
+	sample_prompt = "You are a helpful assistant for a learning platform."
+
+	logger.info("Generating suggestions...")
+	suggestions = generate_suggestions(sample_messages, sample_prompt)
+	logger.info(f"Final suggestions: {json.dumps(suggestions, indent=2)}")
+
+------- Here's the proof of concept program output---------------
+
+2024-06-23 11:37:03,465 - INFO - Generating suggestions...
+2024-06-23 11:37:03,465 - INFO - Sending request to API
+2024-06-23 11:37:03,466 - DEBUG - Starting new HTTPS connection (1): openrouter.ai:443
+2024-06-23 11:37:03,658 - DEBUG - https://openrouter.ai:443 "POST /api/v1/chat/completions HTTP/11" 200 None
+2024-06-23 11:37:07,934 - DEBUG - API Response: {
+	"id": "gen-QHQTrLH68pqAV30e8mLGEKUbHyQM",
+	"model": "openai/gpt-4",
+	"object": "chat.completion",
+	"created": 1719142623,
+	"choices": [
+		{
+			"index": 0,
+			"message": {
+				"role": "assistant",
+				"content": "{\n  \"suggestions\": [\n    {\n      \"text\": \"Search for Math courses\",\n      \"icon\": \"fas fa-search\"\n    },\n    {\n      \"text\": \"How to use this platform?\",\n      \"icon\": \"fas fa-question-circle\"\n    },\n    {\n      \"text\": \"Show my learning progress\",\n      \"icon\": \"fas fa-chart-line\"\n    },\n    {\n      \"text\": \"Find English language courses\",\n      \"icon\": \"fas fa-language\"\n    }\n  ]\n}"
+			},
+			"finish_reason": "stop"
+		}
+	],
+	"system_fingerprint": null,
+	"usage": {
+		"prompt_tokens": 226,
+		"completion_tokens": 105,
+		"total_tokens": 331
+	}
+}
+2024-06-23 11:37:07,935 - INFO - Content from API: {
+	"suggestions": [
+		{
+			"text": "Search for Math courses",
+			"icon": "fas fa-search"
+		},
+		{
+			"text": "How to use this platform?",
+			"icon": "fas fa-question-circle"
+		},
+		{
+			"text": "Show my learning progress",
+			"icon": "fas fa-chart-line"
+		},
+		{
+			"text": "Find English language courses",
+			"icon": "fas fa-language"
+		}
+	]
+}
+2024-06-23 11:37:07,935 - INFO - Parsed suggestions: [
+	{
+		"text": "Search for Math courses",
+		"icon": "fas fa-search"
+	},
+	{
+		"text": "How to use this platform?",
+		"icon": "fas fa-question-circle"
+	},
+	{
+		"text": "Show my learning progress",
+		"icon": "fas fa-chart-line"
+	},
+	{
+		"text": "Find English language courses",
+		"icon": "fas fa-language"
+	}
+]
+2024-06-23 11:37:07,936 - INFO - Final suggestions: [
+	{
+		"text": "Search for Math courses",
+		"icon": "fas fa-search"
+	},
+	{
+		"text": "How to use this platform?",
+		"icon": "fas fa-question-circle"
+	},
+	{
+		"text": "Show my learning progress",
+		"icon": "fas fa-chart-line"
+	},
+	{
+		"text": "Find English language courses",
+		"icon": "fas fa-language"
+	}
+]
